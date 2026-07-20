@@ -1,29 +1,28 @@
-# Guía de la carpeta `.github`
+# The `.github` Directory
 
-La política canónica de ramas y pull requests está definida en
-[`RELEASE_POLICY.md`](RELEASE_POLICY.md). Esta guía explica cómo la carpeta
-`.github` implementa y acompaña esa política.
+[`RELEASE_POLICY.md`](RELEASE_POLICY.md) defines the repository's canonical
+branching and pull-request policy. This guide explains how `.github` supports
+that policy.
 
-## Política aplicada en este repositorio
+## Applied Policy
 
-Este hardfork utiliza `master` como única rama permanente de integración. No
-utiliza ramas `dev` ni `rc`.
+This repository uses `master` as its only permanent integration branch. It does
+not use `dev` or `rc` branches.
 
-El flujo esperado es:
+The expected flow is:
 
 ```text
-issue → rama y worktree temporales → pull request → master
+issue → temporary branch and worktree → pull request → master
 ```
 
-Los commits directos a `master` están prohibidos. Esta restricción se aplica con
-la protección de rama de GitHub. Los workflows de GitHub Actions validan los
-cambios, pero por sí solos no pueden impedir un push directo.
+Direct commits to `master` are prohibited. GitHub branch protection enforces
+that rule. GitHub Actions validates changes but cannot prevent a direct push by
+itself.
 
-## Estructura relevante
+## Relevant Structure
 
 ```text
 .github/
-├── FUNDING.yml
 ├── ISSUE_TEMPLATE/
 │   ├── bug_report.yml
 │   ├── custom.yml
@@ -35,81 +34,63 @@ cambios, pero por sí solos no pueden impedir un push directo.
 │   └── validate-pr-changelog.sh
 └── workflows/
     ├── ci.yml
-    └── lock.yml
+    ├── lock.yml
     └── update-pr-changelog.yml
 ```
 
-## Plantillas de issues
+## Issue Templates
 
-Los archivos de `ISSUE_TEMPLATE` proporcionan formularios para bugs,
-solicitudes de funcionalidades, documentación y casos generales. GitHub los
-muestra automáticamente al crear un issue.
+`ISSUE_TEMPLATE` provides forms for bugs, feature requests, documentation, and
+general requests. GitHub displays them automatically when someone opens an
+issue.
 
-## Plantilla de pull request
+## Pull Request Template
 
-`PULL_REQUEST_TEMPLATE.md` proporciona el formato inicial del cuerpo de un PR.
-Los PR deben apuntar directamente a `master`, relacionar el issue correspondiente
-y documentar las validaciones ejecutadas.
+`PULL_REQUEST_TEMPLATE.md` provides the initial pull-request body. Pull
+requests must target `master`, reference their issue, and describe the
+validations performed.
 
-La plantilla facilita la revisión, pero no aplica la protección de la rama.
+The template helps review quality; it does not enforce branch protection.
 
-## Workflow de validación
+## Validation Workflow
 
-`workflows/ci.yml` se ejecuta en tres situaciones:
+`workflows/ci.yml` runs for pull requests to `master`, pushes to `master`, and
+manual `workflow_dispatch` runs. It has two jobs:
 
-1. `pull_request` hacia `master`.
-2. `push` a `master`, normalmente producido por el merge de un PR.
-3. Ejecución manual mediante `workflow_dispatch`.
+- **Run Pre-Commit Hooks** checks formatting, file hygiene, and Markdown.
+- **Validate repository changes** checks whitespace in the changed range,
+  validates changed shell scripts with `bash -n`, runs ShellCheck, and runs
+  `tests/git-setup.sh`.
 
-El workflow ejecuta un único job, `Validate repository changes`, que:
+### Why CI Runs Before and After a Merge
 
-- comprueba errores de whitespace en el rango modificado;
-- valida con `bash -n` los scripts shell modificados;
-- ejecuta ShellCheck sobre los scripts de este proyecto;
-- ejecuta la suite `tests/git-setup.sh`.
+The pull-request run validates the proposed change before it reaches `master`.
+This is the run branch protection should require.
 
-### Por qué CI aparece en el PR y después del merge
+Merging a pull request creates a push to `master`, so CI runs again against the
+resulting commit. That post-merge run verifies the result but cannot undo a
+change that already landed.
 
-La ejecución del PR valida el cambio antes de que llegue a `master`. Esta es la
-ejecución que debe ser requerida por la protección de rama.
+## Maintenance Workflow
 
-Cuando se fusiona el PR, GitHub genera un `push` sobre `master`; por eso CI se
-ejecuta de nuevo. Esa segunda ejecución comprueba el commit resultante, pero no
-puede deshacer ni prevenir un cambio que ya fue fusionado.
+`workflows/lock.yml` runs daily and marks inactive issues and pull requests. It
+does not participate in the branch model or create commits.
 
-## Workflow de mantenimiento
+## Pull Request Changelog
 
-`workflows/lock.yml` se ejecuta diariamente y marca como inactivos los issues y
-PR abandonados. No interviene en el modelo de ramas ni realiza commits.
+`workflows/update-pr-changelog.yml` validates that every pull request has an
+entry under `Unreleased` in `CHANGELOG.md`. Generate that entry locally with
+`.github/scripts/update-pr-changelog.sh` before requesting review; the workflow
+only validates it and never modifies the branch.
 
-## Changelog de pull requests
+## Required GitHub Protection
 
-`workflows/update-pr-changelog.yml` valida que cada pull request tenga una
-entrada generada bajo `Unreleased` en `CHANGELOG.md`. La entrada se genera
-localmente con `.github/scripts/update-pr-changelog.sh` antes de solicitar
-revisión; el workflow sólo la valida y nunca modifica la rama.
+The `master` branch should require:
 
-## Componentes eliminados
+- a pull request before merging;
+- the rule to apply to administrators;
+- no force pushes; and
+- the CI checks before merge.
 
-No aplican a este hardfork y fueron retirados:
-
-- promoción automática `dev → rc`;
-- promoción automática `rc → master`;
-- scripts de generación de PR de promoción;
-- calendario y refresh trimestral de releases;
-- release automático específico de HyDE;
-- advertencia que rechazaba PR dirigidos a `master`;
-- workflows que hacían push directo a `master`.
-
-## Protección necesaria en GitHub
-
-La rama `master` debe tener estas reglas:
-
-- require a pull request before merging;
-- aplicar la regla también a administradores;
-- no permitir force pushes;
-- requerir `Validate repository changes` antes del merge, una vez que el workflow
-  esté disponible en GitHub.
-
-Con estas reglas, el flujo conserva lo ya implementado: issue, rama/worktree con
-el mismo nombre, commits atómicos, PR contra `master`, CI, merge y limpieza.
+With these rules, the intended flow remains: issue, temporary branch or
+worktree, atomic commits, pull request to `master`, CI, merge, and cleanup.

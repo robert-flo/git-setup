@@ -118,7 +118,7 @@ nvim ~/.config/git/gitconfig.local
 <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=SECURITY" width="450"/>
 
 - GitHub tokens are read without echoing them to the terminal.
-- New GPG keys use the normal GPG passphrase dialog.
+- GPG configuration is completed during **Run full setup**.
 - Review token permissions before using **Run full setup**.
 - `clean` requires an explicit `yes` before deleting local configuration.
 
