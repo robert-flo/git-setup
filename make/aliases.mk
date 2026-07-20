@@ -1,17 +1,17 @@
 # ═══════════════════════════════════════════════════════════════
-# 📎 GIT COMPATIBILITY ALIASES
+# 📎 COMPATIBILITY ALIASES
 # ═══════════════════════════════════════════════════════════════
-# 🎯 Purpose: Short redirects for the Git targets provided by git.mk
+# 🎯 Purpose: Short redirects for the Git and Docker targets
 
 .PHONY: help-aliases \
         git-a git-c git-ac git-p git-st git-s git-d git-l git-lg \
         git-af git-fuck git-bye git-df git-fc git-fm \
-        a c ac p l st s d lg af fuck bye clean df fc fm cm
+        a c ac p l st s d lg af fuck bye clean df fc fm cm db dr dc
 
 help-aliases: ## Show Git compatibility aliases
 	@printf "\n"
 	@printf "$(CYAN)═════════════════════════════════════════════════════════════════════════════════\n$(NC)"
-	@printf "$(CYAN)  📎 Git Aliases\n$(NC)"
+	@printf "$(CYAN)  📎 Compatibility Aliases\n$(NC)"
 	@printf "$(CYAN)═════════════════════════════════════════════════════════════════════════════════\n$(NC)"
 	@printf "\n"
 	@printf "$(BLUE)%-20s %-25s %s$(NC)\n" "ALIAS" "TARGET" "DESCRIPTION"
@@ -31,6 +31,9 @@ help-aliases: ## Show Git compatibility aliases
 	@printf "%-20s %-25s %s\n" "df / git-df" "git-diff-fuzzy" "Select a commit to inspect"
 	@printf "%-20s %-25s %s\n" "fc / git-fc" "git-search CODE=..." "Search history by code"
 	@printf "%-20s %-25s %s\n" "fm / git-fm" "git-search MSG=..." "Search history by message"
+	@printf "%-20s %-25s %s\n" "db" "docker-build" "Build the local Docker image"
+	@printf "%-20s %-25s %s\n" "dr" "docker-run" "Run the ephemeral Docker container"
+	@printf "%-20s %-25s %s\n" "dc" "docker-clean" "Remove the local Docker image"
 	@printf "\n"
 
 # Git operation aliases
@@ -68,3 +71,8 @@ clean: git-clean
 df: git-diff-fuzzy
 fc: git-search
 fm: git-search
+
+# Short Docker aliases
+db: docker-build
+dr: docker-run
+dc: docker-clean

@@ -12,7 +12,8 @@ DIM := \033[2m
 NC := \033[0m
 
 include make/git.mk
+include make/docker.mk
 include make/aliases.mk
 
 .PHONY: help
-help: help-git help-aliases
+help: help-git help-docker help-aliases

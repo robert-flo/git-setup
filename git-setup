@@ -125,6 +125,12 @@ source "$PROJECT_DIR/scripts/setup"
 source "$PROJECT_DIR/scripts/test"
 # shellcheck disable=SC1091
 source "$PROJECT_DIR/scripts/clean"
+
+is_running_in_docker() {
+  [[ -f /.dockerenv ]] && return 0
+  [[ -r /proc/1/cgroup ]] && grep -qaE '/(docker|containerd)(/|$)' /proc/1/cgroup
+}
+
 show_ravn_banner() {
   local gh_user=""
   gh_user=$(gh api user -q .login 2> /dev/null || echo "ravn-ruby-path")
@@ -143,6 +149,9 @@ show_ravn_banner() {
   │                                                    │
 BANNER_EOF
   echo -e "  │     ${GRAY}by Roberto Flores ${WHITE}@${gh_user}${CYAN}                  │"
+  if is_running_in_docker; then
+    echo -e "  │     ${YELLOW}󰡨 Running inside Docker${CYAN}                         │"
+  fi
   cat << 'BANNER_EOF'
   │                                                    │
   ╰────────────────────────────────────────────────────╯
