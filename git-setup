@@ -51,6 +51,12 @@ is_running_in_docker() {
   [[ -r /proc/1/cgroup ]] && grep -qaE '/(docker|containerd)(/|$)' /proc/1/cgroup
 }
 
+clear_screen() {
+  # Keep captured output readable in tests, CI, and non-interactive commands.
+  [[ -t 1 && ${TERM:-dumb} != dumb ]] || return 0
+  printf '\033[H\033[2J'
+}
+
 show_help() {
   print_section "󰋖 Help and Usage"
 
@@ -144,9 +150,9 @@ BANNER_EOF
 }
 
 main() {
+  clear_screen
   verify_dependencies || return 1
 
-  clear || true
   show_ravn_banner
 
   # Handle command line arguments
@@ -200,7 +206,7 @@ main() {
     echo ""
     echo -ne "  ${GRAY}Press Enter to continue...${NC}"
     read -r
-    clear || true
+    clear_screen
     show_ravn_banner
   done
 }

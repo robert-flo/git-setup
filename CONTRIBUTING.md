@@ -5,12 +5,12 @@ documentation, and test improvements are all welcome.
 
 ## Getting started
 
-1. Fork [the repository](https://github.com/robert-flo/git-setup---hermes-agent-era)
+1. Fork [the repository](https://github.com/robert-flo/git-setup)
    and clone your fork:
 
    ```bash
-   git clone https://github.com/<your-user>/git-setup---hermes-agent-era.git
-   cd git-setup---hermes-agent-era
+   git clone https://github.com/<your-user>/git-setup.git
+   cd git-setup
    ```
 
 2. Create a focused branch from `master`:
