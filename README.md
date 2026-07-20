@@ -78,23 +78,33 @@ scopes and GitHub web steps.
 <a id="docker"></a>
 <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=TRY%20IT%20IN%20DOCKER" width="450"/>
 
-Run the assistant in an isolated `archlinux:latest` container before using it
-with your real home directory:
+Run the assistant in an isolated Arch Linux container before using it with your
+real home directory:
 
 ```shell
 make docker-run
 ```
 
-The command builds `git-setup:local` when needed and starts an interactive,
-ephemeral container. It is removed on exit and does not mount your `$HOME`.
-The RaVN banner confirms this mode with `󰡨 Running inside Docker`.
+The default remains Arch Linux and builds `git-setup:local` when needed. You
+can select Ubuntu or Fedora with `DOCKER_ENV`:
 
-If you want to manage the local image explicitly:
+```shell
+make docker-run DOCKER_ENV=ubuntu
+make docker-run DOCKER_ENV=fedora
+```
+
+Each command starts an interactive, ephemeral container with no `$HOME` mount.
+It is removed on exit, and the RaVN banner confirms this mode with
+`󰡨 Running inside Docker`.
+
+If you want to manage the local images explicitly:
 
 ```shell
 make docker-build
-make docker-run
 make docker-clean
+make docker-build DOCKER_ENV=ubuntu
+make docker-clean DOCKER_ENV=ubuntu
+make docker-clean-all
 ```
 
 The Docker environment lets you try the complete setup flow before using your

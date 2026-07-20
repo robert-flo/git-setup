@@ -88,6 +88,10 @@ jobs:
         shell: bash
         run: bash tests/git-setup.sh
 
+      - name: Run Docker Make tests
+        shell: bash
+        run: bash tests/docker-make.sh
+
       - name: Run changelog automation tests
         shell: bash
         run: bash tests/changelog-automation.sh
