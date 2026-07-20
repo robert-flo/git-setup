@@ -11,8 +11,28 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   source "$PROJECT_DIR/lib/global_fn.sh"
 fi
 
+require_test_identity() {
+  local git_name=""
+  local git_email=""
+
+  git_name=$(git config --global --get user.name 2> /dev/null || true)
+  git_email=$(git config --global --get user.email 2> /dev/null || true)
+
+  if [[ -n $git_name && -n $git_email ]]; then
+    return 0
+  fi
+
+  print_error "Git identity is not configured"
+  print_info "Run option 2 (Run full setup) before the integration test"
+  return 1
+}
+
 run_test() {
   print_section "${ICON_ROCKET} Integration Test"
+
+  if ! require_test_identity; then
+    return 1
+  fi
 
   local repo_name
   repo_name="test-git-$(date +%s)"
@@ -200,4 +220,3 @@ show_menu() {
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   run_test
 fi
-
