@@ -87,3 +87,7 @@ jobs:
       - name: Run git-setup tests
         shell: bash
         run: bash tests/git-setup.sh
+
+      - name: Run changelog automation tests
+        shell: bash
+        run: bash tests/changelog-automation.sh
