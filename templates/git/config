@@ -9,7 +9,7 @@
 
 [core]
     editor = nvim
-    pager = hunk pager
+    pager = delta
     excludesFile = @CONFIG_DIR@/gitignore.global
     attributesFile = @CONFIG_DIR@/gitattributes.global
     ignorecase = false
