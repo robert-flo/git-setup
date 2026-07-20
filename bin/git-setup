@@ -603,6 +603,7 @@ generate_git_config_files() {
       done < "$template_file" > "$file"
       git config --file "$file" user.name "$USER_NAME"
       git config --file "$file" user.email "$USER_EMAIL"
+      # shellcheck disable=SC2088 # Git must receive a literal tilde here.
       git config --file "$file" user.signingkey "~/.ssh/id_ed25519.pub"
       git config --file "$file" gpg.format ssh
       git config --file "$file" commit.gpgsign true

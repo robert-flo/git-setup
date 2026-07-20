@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Shared terminal presentation for git-setup.
+# shellcheck disable=SC2317 # This library may be sourced or executed directly.
 if [[ ${_GLOBAL_FN_SOURCED:-0} -eq 1 ]]; then
   return 0 2> /dev/null || exit 0
 fi
@@ -16,6 +17,7 @@ if [[ -t 1 && ${TERM:-dumb} != "dumb" && -z ${NO_COLOR:-} ]]; then
   readonly CYAN=$'\033[0;36m'
   readonly WHITE=$'\033[1;37m'
   readonly GRAY=$'\033[0;90m'
+  # shellcheck disable=SC2034 # Public style constant used by sourced scripts.
   readonly LIGHT_GRAY=$'\033[0;37m'
   readonly NC=$'\033[0m'
   readonly ICON_CHECK="✓"
@@ -32,6 +34,7 @@ else
   readonly CYAN=""
   readonly WHITE=""
   readonly GRAY=""
+  # shellcheck disable=SC2034 # Public style constant used by sourced scripts.
   readonly LIGHT_GRAY=""
   readonly NC=""
   readonly ICON_CHECK="[OK]"
@@ -42,14 +45,17 @@ else
 fi
 
 # Semantic section icons used by git-setup.
-readonly ICON_KEY="󰌋"
-readonly ICON_LOCK=""
-readonly ICON_GIT=""
-readonly ICON_GITHUB=""
-readonly ICON_GEAR=""
-readonly ICON_ROCKET=""
-readonly ICON_PACKAGE=""
+# shellcheck disable=SC2034 # Public constants used by git-setup after source.
+readonly \
+  ICON_KEY="󰌋" \
+  ICON_LOCK="" \
+  ICON_GIT="" \
+  ICON_GITHUB="" \
+  ICON_GEAR="" \
+  ICON_ROCKET="" \
+  ICON_PACKAGE=""
 
+# shellcheck disable=SC2034 # Public icon catalog used by git-setup after source.
 declare -Ar RAVN_ICON=(
   [documents_file]=" "
   [ui_check]=" "
