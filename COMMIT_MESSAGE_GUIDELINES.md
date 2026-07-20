@@ -29,6 +29,19 @@ This approach remains compatible with tools that parse Conventional Commit types
 
 ---
 
+## Changelog Commits
+
+When committing a generated `CHANGELOG.md` entry for a pull request, the
+subject must include the documentation emoji:
+
+```markdown
+chore(changelog): 📝 Update PR #<number>
+```
+
+For example: `chore(changelog): 📝 Update PR #21`.
+
+---
+
 ## Commit Message Types
 
 Here is the comprehensive list of commit types matched with their respective Gitmojis:
