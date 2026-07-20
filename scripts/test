@@ -212,6 +212,7 @@ show_menu() {
   echo -e "  ${GREEN}2${NC}  ${RAVN_ICON[ui_gear]}  Run full setup"
   echo -e "  ${GREEN}3${NC}  ${RAVN_ICON[ui_test]}  Run integration test"
   echo -e "  ${GREEN}4${NC}  ${RAVN_ICON[ui_trash]}  Clean local config (fresh start)"
+  echo -e "  ${GREEN}h${NC}  󰋖  Help and usage"
   echo -e "  ${GREEN}q${NC}  ${RAVN_ICON[ui_close]}  Exit"
   echo ""
   echo -ne "  ${LIGHT_GRAY}Selection:${NC} "

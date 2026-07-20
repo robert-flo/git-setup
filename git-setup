@@ -1,93 +1,13 @@
 #!/usr/bin/env bash
-# ╭──────────────────────────────────────────────────────────────────────────────╮
-# │                                                                              │
-# │   ██████╗ ██╗████████╗    ███████╗███████╗████████╗██╗   ██╗██████╗          │
-# │  ██╔════╝ ██║╚══██╔══╝    ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗         │
-# │  ██║  ███╗██║   ██║       ███████╗█████╗     ██║   ██║   ██║██████╔╝         │
-# │  ██║   ██║██║   ██║       ╚════██║██╔══╝     ██║   ██║   ██║██╔═══╝          │
-# │  ╚██████╔╝██║   ██║       ███████║███████╗   ██║   ╚██████╔╝██║              │
-# │   ╚═════╝ ╚═╝   ╚═╝       ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝              │
-# │                                                                              │
-# │            Git + GitHub + GPG Configuration for Arch Linux                   │
-# │                                                                              │
-# ╰──────────────────────────────────────────────────────────────────────────────╯
-# ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                          git-setup — Documentación                         ║
-# ╚══════════════════════════════════════════════════════════════════════════════╝
-# # DESCRIPCIÓN
-# Asistente interactivo para configurar Git, GitHub, claves SSH y GPG signing
-# en Arch Linux. Ofrece subcomandos para verificar, instalar, probar y limpiar
-# la configuración completa del entorno de desarrollo.
-#
-# # USO BÁSICO
-#   git-setup              # Menú interactivo
-#   git-setup <comando>    # Modo directo
-#
-# # SUBCOMANDOS
-#
-#   verify | -v   — Verifica la configuración actual sin modificar nada
-#   config | -f   — Genera los archivos de configuración en ~/.config/git
-#   setup  | -s   — Configura desde cero: archivos, gh auth, SSH, GPG, signing
-#   test   | -t   — Crea un repo temporal, prueba signed commits, push
-#   clean  | -c   — Elimina toda la configuración local (SSH, GPG, gh auth)
-#   help   | -h   — Muestra ayuda rápida
-#
-# # EJEMPLOS
-#
-#   ## Verificar configuración actual
-#   git-setup verify
-#   # → Muestra estado de: dependencias, git config, SSH keys, GPG keys, gh auth
-#
-#   ## Configuración completa desde cero
-#   git-setup setup
-#   # → Pide token de GitHub
-#   # → Genera SSH ed25519 key y la sube a GitHub (auth + signing)
-#   # → Genera GPG RSA 4096 key y la sube a GitHub
-#   # → Pregunta método de signing (SSH / GPG / None)
-#   # → Configura default branch = master
-#
-#   ## Prueba de integración
-#   git-setup test
-#   # → Crea /tmp/test-git-<timestamp>/
-#   # → Hace signed commit
-#   # → Opcional: push a GitHub (crea repo temporal y lo borra)
-#   # → Verifica la firma del commit
-#
-#   ## Limpiar todo
-#   git-setup clean
-#   # → Elimina ~/.ssh/id_ed25519*
-#   # → Elimina todas las GPG keys del usuario
-#   # → Elimina gh auth token
-#   # → Pide confirmación "yes"
-#
-#   ## Menú interactivo
-#   git-setup
-#   # → Muestra menú con opciones 1-4 y q
-#
-# # COMBINACIONES
-#
-#   | Modo                          | Comando                       | Resultado                                      |
-#   |-------------------------------|-------------------------------|------------------------------------------------|
-#   | Verificar solo                | git-setup -v                  | Estado de todo sin cambios                     |
-#   | Setup completo                | git-setup -s                  | GitHub SSH GPG config desde cero               |
-#   | Test rápido (local)           | git-setup -t                  | Crea repo, prueba signing, no push             |
-#   | Test con push                 | git-setup test                | Test + pregunta si hacer push                  |
-#   | Clean (con confirmación)      | git-setup -c                  | Pide "yes" antes de borrar                     |
-#   | Menú interactivo              | git-setup                     | Navegación por números                         |
-#   | Ayuda rápida                  | git-setup help                | Lista de comandos                              |
-#
-# # FLUJO RECOMENDADO
-#   1. git-setup verify     # Ver qué falta
-#   2. git-setup setup      # Configurar todo
-#   3. git-setup test       # Probar que funciona
+# User-facing help is implemented by show_help below. Keeping it executable
+# makes the interactive menu and command-line help share one source of truth.
 
 set -Eeuo pipefail
 
 #--------------------------------#
 # import variables and functions #
 #--------------------------------#
-# Establece el directorio de trabajo del script e importa variables y funciones globales
-# desde global_fn.sh. Si no se puede cargar el archivo, el script termina con error.
+# Resolve the project directory and load shared variables and presentation helpers.
 scrDir="$(dirname "$(realpath "$0")")"
 PROJECT_DIR="$scrDir"
 # shellcheck disable=SC1091 # Resolved from the project root.
@@ -129,6 +49,70 @@ source "$PROJECT_DIR/scripts/clean"
 is_running_in_docker() {
   [[ -f /.dockerenv ]] && return 0
   [[ -r /proc/1/cgroup ]] && grep -qaE '/(docker|containerd)(/|$)' /proc/1/cgroup
+}
+
+show_help() {
+  print_section "󰋖 Help and Usage"
+
+  cat <<'HELP_EOF'
+  git-setup prepares Git, GitHub, SSH, and GPG on Arch Linux.
+
+  BASIC USE
+    git-setup              Open the interactive menu
+    git-setup <command>    Run one action directly
+
+  COMMANDS
+    config   Create or refresh the managed Git configuration files.
+    verify   Review Git, SSH, GPG, GitHub, and generated configuration files.
+    setup    Configure a new machine with GitHub, SSH, GPG, and commit signing.
+    test     Create a test repository and verify a signed commit.
+    clean    Remove configuration created by git-setup after confirmation.
+    help     Show this guide.
+
+  CONFIGURATION FILES
+    config creates these files in ~/.config/git:
+      config, delta.gitconfig, gitattributes.global, gitconfig_aliases,
+      gitignore.global, and shell_aliases.
+
+    ~/.config/git/gitconfig.local is personal. It is loaded last and is never
+    generated, updated, or removed by git-setup.
+
+  GITHUB TOKEN
+    Run full setup needs your saved GitHub Personal Access Token to connect
+    GitHub CLI and add the public SSH, SSH-signing, and GPG keys it creates.
+    Create the token once, keep it in 1Password or Bitwarden, and reuse it
+    whenever you configure a new machine.
+    See docs/github-token.md for the required scopes and GitHub web steps.
+
+  SETUP
+    Full setup asks for your name and email, creates the managed Git files,
+    creates or reuses SSH and GPG keys, adds their public keys to GitHub, and
+    lets you choose SSH, GPG, or no commit signing.
+
+  INTEGRATION TEST
+    The test needs the name and email created by full setup. It creates a
+    temporary local repository, makes a signed test commit, and can optionally
+    create, push, and remove a temporary GitHub repository.
+
+  DOCKER
+    make docker-run starts the same setup in an isolated container. Use your
+    saved token when prompted. Keys created inside the container do not persist
+    on your computer; their public keys are still added to GitHub.
+
+  AUTOMATION
+    Avoid identity prompts with:
+      NAME='Ada Lovelace' EMAIL='ada@example.com' git-setup config
+
+  CLEANUP
+    clean requires typing yes. It removes git-setup SSH keys, GPG keys for the
+    configured email, managed Git files, and the GitHub CLI authentication.
+    gitconfig.local is preserved.
+
+  RECOMMENDED FLOW
+    1. git-setup verify
+    2. git-setup setup
+    3. git-setup test
+HELP_EOF
 }
 
 show_ravn_banner() {
@@ -186,16 +170,7 @@ main() {
       exit 0
       ;;
     help | h | --help | -h)
-      echo "Usage: $0 [command]"
-      echo ""
-      echo "Commands:"
-      echo "  verify   Check current configuration"
-      echo "  config   Generate files in ~/.config/git"
-      echo "  setup    Generate config and run full setup wizard"
-      echo "  test     Run integration test"
-      echo "  clean    Clean local config (fresh start)"
-      echo ""
-      echo "Run without arguments for interactive menu."
+      show_help
       exit 0
       ;;
   esac
@@ -212,6 +187,7 @@ main() {
       2) do_setup || true ;;
       3) run_test || true ;;
       4) do_clean || true ;;
+      h | H) show_help ;;
       q | Q)
         echo ""
         print_info "Goodbye!"
