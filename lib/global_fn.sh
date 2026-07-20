@@ -59,19 +59,19 @@ fi
 
 # These are retained as public constants; they are not rendered in logs.
 # shellcheck disable=SC2034
-readonly ICON_KEY="[KEY]"
+readonly ICON_KEY="󰌋"
 # shellcheck disable=SC2034
-readonly ICON_LOCK="[LOCK]"
+readonly ICON_LOCK=""
 # shellcheck disable=SC2034
-readonly ICON_GIT="[GIT]"
+readonly ICON_GIT=""
 # shellcheck disable=SC2034
-readonly ICON_GITHUB="[GITHUB]"
+readonly ICON_GITHUB=""
 # shellcheck disable=SC2034
-readonly ICON_GEAR="[GEAR]"
+readonly ICON_GEAR=""
 # shellcheck disable=SC2034
-readonly ICON_ROCKET="[ROCKET]"
+readonly ICON_ROCKET=""
 # shellcheck disable=SC2034
-readonly ICON_PACKAGE="[PACKAGE]"
+readonly ICON_PACKAGE=""
 # RavnVM workflow icons retained as reusable public constants.
 # shellcheck disable=SC2034
 readonly ICON_SNAPSHOT="📸"

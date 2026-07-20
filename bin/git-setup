@@ -241,6 +241,26 @@ verify_git_config() {
   fi
 }
 
+verify_generated_git_config_files() {
+  local git_config_file=""
+
+  print_section "${RAVN_ICON[documents_file]} Generated Git Configuration Files"
+
+  for git_config_file in \
+    config \
+    delta.gitconfig \
+    gitattributes.global \
+    gitconfig_aliases \
+    gitignore.global \
+    shell_aliases; do
+    if [[ -f $GIT_CONFIG_DIR/$git_config_file ]]; then
+      print_success "Found: ${GRAY}~/.config/git/$git_config_file${NC}"
+    else
+      print_error "Missing: ${GRAY}~/.config/git/$git_config_file${NC}"
+    fi
+  done
+}
+
 verify_ssh() {
   print_section "${ICON_KEY} SSH Authentication"
 
@@ -950,6 +970,7 @@ show_menu() {
 do_verify() {
   verify_dependencies
   verify_git_config
+  verify_generated_git_config_files
   verify_ssh
   verify_gpg
   verify_github_auth
@@ -980,6 +1001,15 @@ do_clean() {
   echo -e "    ${GRAY}GPG:${NC}"
   echo -e "      • All GPG secret keys for ${WHITE}$USER_NAME${NC}"
   echo -e "      • ~/.gnupg/gpg-agent.conf"
+  echo ""
+  echo -e "    ${GRAY}Git Configuration:${NC}"
+  echo -e "      • ~/.config/git/config"
+  echo -e "      • ~/.config/git/delta.gitconfig"
+  echo -e "      • ~/.config/git/gitattributes.global"
+  echo -e "      • ~/.config/git/gitconfig_aliases"
+  echo -e "      • ~/.config/git/gitignore.global"
+  echo -e "      • ~/.config/git/shell_aliases"
+  echo -e "      ${GRAY}(gitconfig.local will be preserved)${NC}"
   echo ""
   echo -e "    ${GRAY}GitHub CLI:${NC}"
   echo -e "      • gh authentication token"
@@ -1030,6 +1060,29 @@ do_clean() {
   # Restart gpg-agent
   gpgconf --kill gpg-agent 2> /dev/null || true
   print_success "Stopped GPG agent"
+
+  print_section "${ICON_GIT} Cleaning Git Configuration"
+
+  local git_config_file=""
+  local removed_git_config=0
+  for git_config_file in \
+    "$GIT_CONFIG_DIR/config" \
+    "$GIT_CONFIG_DIR/delta.gitconfig" \
+    "$GIT_CONFIG_DIR/gitattributes.global" \
+    "$GIT_CONFIG_DIR/gitconfig_aliases" \
+    "$GIT_CONFIG_DIR/gitignore.global" \
+    "$GIT_CONFIG_DIR/shell_aliases"; do
+    if [[ -f $git_config_file ]]; then
+      rm -f "$git_config_file"
+      print_success "Removed ${GRAY}${git_config_file/#$HOME/\~}${NC}"
+      ((removed_git_config += 1))
+    fi
+  done
+  if ((removed_git_config == 0)); then
+    print_info "No generated Git configuration files found"
+  else
+    print_info "Preserved ${GRAY}~/.config/git/gitconfig.local${NC}"
+  fi
 
   print_section "󰃢 Cleaning GitHub CLI"
 
