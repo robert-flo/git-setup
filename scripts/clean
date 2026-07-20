@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+# clean command module.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  set -Eeuo pipefail
+  module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck disable=SC1091
+  source "$module_dir/../helper/set_variable.sh"
+  PROJECT_DIR="$GIT_SETUP_ROOT"
+  # shellcheck disable=SC1091
+  source "$PROJECT_DIR/lib/global_fn.sh"
+fi
+
+do_clean() {
+  print_header "󰃢 Clean Local Git Configuration"
+
+  echo ""
+  print_warn "This will remove locally created configuration files:"
+  echo ""
+  echo -e "    ${GRAY}SSH Keys:${NC}"
+  echo -e "      • ~/.ssh/id_ed25519"
+  echo -e "      • ~/.ssh/id_ed25519.pub"
+  echo ""
+  echo -e "    ${GRAY}GPG:${NC}"
+  echo -e "      • All GPG secret keys for ${WHITE}$USER_NAME${NC}"
+  echo -e "      • ~/.gnupg/gpg-agent.conf"
+  echo ""
+  echo -e "    ${GRAY}Git Configuration:${NC}"
+  echo -e "      • ~/.config/git/config"
+  echo -e "      • ~/.config/git/delta.gitconfig"
+  echo -e "      • ~/.config/git/gitattributes.global"
+  echo -e "      • ~/.config/git/gitconfig_aliases"
+  echo -e "      • ~/.config/git/gitignore.global"
+  echo -e "      • ~/.config/git/shell_aliases"
+  echo -e "      ${GRAY}(gitconfig.local will be preserved)${NC}"
+  echo ""
+  echo -e "    ${GRAY}GitHub CLI:${NC}"
+  echo -e "      • gh authentication token"
+  echo ""
+  echo -e "    ${RED}${ICON_WARN} This action cannot be undone!${NC}"
+  echo ""
+  echo -ne "  ${YELLOW}Are you sure? Type 'yes' to confirm:${NC} "
+  read -r confirm
+
+  if [[ $confirm != "yes" ]]; then
+    print_info "Cancelled"
+    return 0
+  fi
+
+  print_section "󰃢 Cleaning SSH Keys"
+
+  if [[ -f ~/.ssh/id_ed25519 ]]; then
+    rm -f ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub
+    print_success "Removed SSH keys"
+  else
+    print_info "No SSH keys found"
+  fi
+
+  print_section "󰃢 Cleaning GPG Keys"
+
+  # Get all GPG key IDs for the user
+  local gpg_keys=""
+  gpg_keys=$(gpg --list-secret-keys --keyid-format LONG "$USER_EMAIL" 2> /dev/null | grep "^sec" | awk '{print $2}' | cut -d'/' -f2 || true)
+
+  if [[ -n $gpg_keys ]]; then
+    for key_id in $gpg_keys; do
+      print_step "Removing GPG key: ${WHITE}$key_id${NC}"
+      # Delete secret key first (required before public)
+      gpg --batch --yes --delete-secret-keys "$key_id" 2> /dev/null || true
+      gpg --batch --yes --delete-keys "$key_id" 2> /dev/null || true
+      print_success "Removed key $key_id"
+    done
+  else
+    print_info "No GPG keys found for $USER_EMAIL"
+  fi
+
+  # Remove gpg-agent.conf
+  if [[ -f ~/.gnupg/gpg-agent.conf ]]; then
+    rm -f ~/.gnupg/gpg-agent.conf
+    print_success "Removed gpg-agent.conf"
+  fi
+
+  # Restart gpg-agent
+  gpgconf --kill gpg-agent 2> /dev/null || true
+  print_success "Stopped GPG agent"
+
+  print_section "${ICON_GIT} Cleaning Git Configuration"
+
+  local git_config_file=""
+  local removed_git_config=0
+  for git_config_file in \
+    "$GIT_CONFIG_DIR/config" \
+    "$GIT_CONFIG_DIR/delta.gitconfig" \
+    "$GIT_CONFIG_DIR/gitattributes.global" \
+    "$GIT_CONFIG_DIR/gitconfig_aliases" \
+    "$GIT_CONFIG_DIR/gitignore.global" \
+    "$GIT_CONFIG_DIR/shell_aliases"; do
+    if [[ -f $git_config_file ]]; then
+      rm -f "$git_config_file"
+      print_success "Removed ${GRAY}${git_config_file/#$HOME/\~}${NC}"
+      ((removed_git_config += 1))
+    fi
+  done
+  if ((removed_git_config == 0)); then
+    print_info "No generated Git configuration files found"
+  else
+    print_info "Preserved ${GRAY}~/.config/git/gitconfig.local${NC}"
+  fi
+
+  print_section "󰃢 Cleaning GitHub CLI"
+
+  if gh auth status > /dev/null 2>&1; then
+    gh auth logout --hostname github.com 2> /dev/null || true
+    print_success "Logged out from GitHub CLI"
+  else
+    print_info "GitHub CLI not authenticated"
+  fi
+
+  print_section "${ICON_CHECK} Cleanup Complete"
+
+  echo ""
+  print_info "Your local git configuration has been reset."
+  print_info "Run option ${WHITE}2${NC} (Full Setup) to reconfigure everything."
+  echo ""
+}
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Entry Point                                                                  │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  do_clean
+fi
+

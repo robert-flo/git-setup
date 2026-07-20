@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+
+# test command module.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  set -Eeuo pipefail
+  module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck disable=SC1091
+  source "$module_dir/../helper/set_variable.sh"
+  PROJECT_DIR="$GIT_SETUP_ROOT"
+  # shellcheck disable=SC1091
+  source "$PROJECT_DIR/lib/global_fn.sh"
+fi
+
+run_test() {
+  print_section "${ICON_ROCKET} Integration Test"
+
+  local repo_name
+  repo_name="test-git-$(date +%s)"
+  local test_dir="/tmp/$repo_name"
+  local test_passed=0
+  local test_failed=0
+  local pushed_to_github=false
+  local commit_signed=false
+
+  # Test 1: Create repository
+  print_step "Creating test repository..."
+  mkdir -p "$test_dir" && cd "$test_dir"
+  if git init -b main > /dev/null 2>&1; then
+    print_success "Git repository initialized"
+    ((++test_passed))
+  else
+    print_error "Failed to initialize repository"
+    ((++test_failed))
+    cd - > /dev/null || true
+    return 1
+  fi
+
+  # Test 2: Create file and stage
+  {
+    echo "# Test Repository"
+    echo ""
+    echo "This is a test repository created by git-setup"
+    echo "Created: $(date)"
+  } > README.md
+
+  if git add README.md 2> /dev/null; then
+    print_success "File staged"
+    ((++test_passed))
+  else
+    print_error "Failed to stage file"
+    ((++test_failed))
+  fi
+
+  # Test 3: Signed commit
+  print_step "Testing signed commit..."
+  local commit_output=""
+  local commit_result=0
+  commit_output=$(git commit -S -m "Test signed commit" 2>&1) || commit_result=$?
+  if ((commit_result == 0)); then
+    print_success "Signed commit created"
+    commit_signed=true
+    ((++test_passed))
+
+    # Show commit details
+    local commit_hash=""
+    commit_hash=$(git rev-parse --short HEAD 2> /dev/null || echo "unknown")
+    local commit_author=""
+    commit_author=$(git log -1 --format='%an <%ae>' 2> /dev/null || echo "unknown")
+    print_info "Commit: ${WHITE}$commit_hash${NC}"
+    print_info "Author: ${GRAY}$commit_author${NC}"
+
+    # Verify signature
+    print_step "Verifying commit signature..."
+    local verify_output=""
+    verify_output=$(git log --show-signature -1 2>&1) || true
+    if echo "$verify_output" | grep -q -E "Good signature|signature"; then
+      print_success "Commit is signed & verified"
+      ((++test_passed))
+    else
+      print_warn "Could not verify signature"
+    fi
+  else
+    print_error "Signed commit failed"
+    ((++test_failed))
+
+    # Show why it failed
+    if echo "$commit_output" | grep -q "No secret key"; then
+      print_info "Reason: GPG/SSH key not found"
+    else
+      echo -e "    ${GRAY}Error: $commit_output${NC}"
+    fi
+
+    print_step "Trying unsigned commit..."
+    if git -c commit.gpgsign=false commit -m "Test commit (unsigned)" > /dev/null 2>&1; then
+      print_warn "Unsigned commit worked"
+    else
+      print_error "Even unsigned commit failed"
+      ((++test_failed))
+    fi
+  fi
+
+  # Test 4: Push to GitHub (optional)
+  echo ""
+  echo -ne "  ${GRAY}Push to GitHub? (y/N):${NC} "
+  read -r do_push
+  if [[ $do_push =~ ^[yY]$ ]]; then
+    print_step "Creating repository on GitHub..."
+    local gh_output=""
+    local gh_result=0
+    gh_output=$(gh repo create "$repo_name" --public --source=. --remote=origin --push 2>&1) || gh_result=$?
+    if ((gh_result == 0)); then
+      local user=""
+      user=$(gh api user -q .login 2> /dev/null || echo "unknown")
+      print_success "Repository created and pushed"
+      print_info "URL: ${CYAN}https://github.com/$user/$repo_name${NC}"
+      pushed_to_github=true
+      ((++test_passed))
+    else
+      print_error "Push failed"
+      ((++test_failed))
+      echo -e "    ${GRAY}Error: $gh_output${NC}"
+    fi
+  else
+    print_info "Skipped push to GitHub"
+  fi
+
+  # Summary
+  echo ""
+  print_section "󰄬 Test Summary"
+
+  echo -e "  ${WHITE}Results:${NC}"
+  echo -e "    ${GREEN}${ICON_CHECK} Passed:${NC} $test_passed"
+  echo -e "    ${RED}${ICON_CROSS} Failed:${NC} $test_failed"
+  echo ""
+  echo -e "  ${WHITE}Details:${NC}"
+  echo -e "    Repository:     ${GRAY}$test_dir${NC}"
+  if [[ $commit_signed == "true" ]]; then
+    echo -e "    Signed commit:  ${GREEN}Yes${NC}"
+  else
+    echo -e "    Signed commit:  ${RED}No${NC}"
+  fi
+  if [[ $pushed_to_github == "true" ]]; then
+    local user=""
+    user=$(gh api user -q .login 2> /dev/null || echo "unknown")
+    echo -e "    GitHub:         ${GREEN}github.com/$user/$repo_name${NC}"
+  else
+    echo -e "    GitHub:         ${GRAY}Not pushed${NC}"
+  fi
+
+  # Overall status
+  echo ""
+  if ((test_failed == 0)); then
+    print_success "All tests passed! Your Git setup is working correctly."
+  else
+    print_warn "Some tests failed. Check the details above."
+  fi
+
+  # Cleanup
+  echo ""
+  print_section "󰃢 Cleanup"
+
+  # Delete local test directory
+  cd - > /dev/null || true
+  if rm -rf "$test_dir" 2> /dev/null; then
+    print_success "Local test directory deleted"
+  fi
+
+  # Delete GitHub repository if it was created
+  if [[ $pushed_to_github == "true" ]]; then
+    local user=""
+    user=$(gh api user -q .login 2> /dev/null || echo "unknown")
+    print_step "Deleting GitHub repository ${GRAY}$user/$repo_name${NC}..."
+    if gh repo delete "$user/$repo_name" --yes 2> /dev/null; then
+      print_success "GitHub repository deleted"
+    else
+      print_warn "Could not delete GitHub repository"
+      print_info "Delete manually: ${CYAN}gh repo delete $user/$repo_name --yes${NC}"
+    fi
+  fi
+
+  print_success "Cleanup complete"
+}
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Main Menu                                                                    │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+show_menu() {
+  echo ""
+  print_section "${RAVN_ICON[ui_command]} Choose an action"
+  echo -e "  ${GREEN}1${NC}  ${RAVN_ICON[ui_check]}  Verify current configuration"
+  echo -e "  ${GREEN}2${NC}  ${RAVN_ICON[ui_gear]}  Run full setup"
+  echo -e "  ${GREEN}3${NC}  ${RAVN_ICON[ui_test]}  Run integration test"
+  echo -e "  ${GREEN}4${NC}  ${RAVN_ICON[ui_trash]}  Clean local config (fresh start)"
+  echo -e "  ${GREEN}q${NC}  ${RAVN_ICON[ui_close]}  Exit"
+  echo ""
+  echo -ne "  ${LIGHT_GRAY}Selection:${NC} "
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  run_test
+fi
+
