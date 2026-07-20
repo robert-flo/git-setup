@@ -131,4 +131,3 @@ do_clean() {
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   do_clean
 fi
-
