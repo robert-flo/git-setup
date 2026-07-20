@@ -2,148 +2,199 @@
 
 A good commit message should be descriptive and provide context about the changes made. This makes it easier to understand and review the changes in the future.
 
-Here are some guidelines for writing descriptive commit messages:
+To keep our commit history clear and visually scannable, we use a hybrid style of **Conventional Commits** paired with **Gitmoji**.
 
-- Start with a short summary of the changes made in the commit.
+---
 
-- Use imperative mood for the summary, as if you're giving a command. For example, "Add feature" instead of "Added feature".
+## General Guidelines
 
-- Provide additional details in the commit message body, if necessary. This could include the reason for the change, the impact of the change, or any dependencies that were introduced or removed.
+- **Start with a short summary** of the changes made in the commit.
+- **Use the imperative mood** for the summary, as if you're giving a command. For example, `"Add feature"` instead of `"Added feature"`.
+- **Provide additional details** in the commit message body, if necessary. This could include the reason for the change, the impact of the change, or any dependencies that were introduced or removed.
+- **Keep the message within 72 characters** per line to ensure that it's easy to read in `git log` output.
 
-- Keep the message within 72 characters per line to ensure that it's easy to read in Git log output.
+---
 
-Examples of good commit messages:
+## Format Structure
 
-- "Add authentication feature for user login"
-- "Fix bug causing application to crash on startup"
-- "Update documentation for API endpoints"
+We recommend placing the emoji **after the colon** of the conventional commit type:
 
-Remember, writing descriptive commit messages can save time and frustration in the future, and help others understand the changes made to the codebase.
+```markdown
+<type>(<optional-scope>): <emoji> <description>
+```
+
+*Example:* `feat(auth): ✨ Add authentication feature for user login`
+
+This approach remains compatible with tools that parse Conventional Commit types at the start of the subject line.
+
+---
 
 ## Commit Message Types
 
-Here's a more comprehensive list of commit types that you can use:
+Here is the comprehensive list of commit types matched with their respective Gitmojis:
 
-`feat`: Adding a new feature to the project
+### `feat` — ✨ (Sparkles)
 
-```markdown
-feat: Add multi-image upload support
-```
-
-`fix`: Fixing a bug or issue in the project
+Adding a new feature to the project.
 
 ```markdown
-fix: Fix bug causing application to crash on startup
+feat: ✨ Add multi-image upload support
 ```
 
-`docs`: Updating documentation in the project
+### `fix` — 🐛 (Bug)
+
+Fixing a bug or issue.
 
 ```markdown
-docs: Update documentation for API endpoints
+fix: 🐛 Fix bug causing application to crash on startup
 ```
 
-`style`: Making cosmetic or style changes to the project (such as changing colors or formatting code)
+### `docs` — 📝 (Memo)
+
+Updating or adding documentation.
 
 ```markdown
-style: Update colors and formatting
+docs: 📝 Update documentation for API endpoints
 ```
 
-`refactor`: Making code changes that don't affect the behavior of the project, but improve its quality or maintainability
+### `style` — 🎨 (Art)
+
+Making cosmetic, styling, or formatting changes that do not affect code behavior (colors, layouts, spacing).
 
 ```markdown
-refactor: Remove unused code
+style: 🎨 Update colors and formatting
 ```
 
-`test`: Adding or modifying tests for the project
+### `refactor` — ♻️ (Recycle)
+
+Making code changes that don't affect behavior, but improve code quality, readability, or design.
 
 ```markdown
-test: Add tests for new feature
+refactor: ♻️ Remove unused code
 ```
 
-`chore`: Making changes to the project that don't fit into any other category, such as updating dependencies or configuring the build system
+### `test` — 🧪 (Test Tube)
+
+Adding or modifying tests.
 
 ```markdown
-chore: Update dependencies
+test: 🧪 Add tests for new authentication module
 ```
 
-`perf`: Improving performance of the project
+### `chore` — 🧹 (Broom) or 🔧 (Wrench)
+
+General maintenance changes that do not fit into other categories (updating dependencies, config files).
 
 ```markdown
-perf: Improve performance of image processing
+chore: 🧹 Update dependencies
 ```
 
-`security`: Addressing security issues in the project
+### `perf` — ⚡ (Zap)
+
+Improving execution performance or resource usage.
 
 ```markdown
-security: Update dependencies to address security issues
+perf: ⚡ Improve performance of image processing
 ```
 
-`merge`: Merging branches in the project
+### `security` — 🔒 (Lock)
+
+Addressing or fixing security vulnerabilities.
 
 ```markdown
-merge: Merge branch 'feature/branch-name' into develop
+security: 🔒 Update dependencies to address security issues
 ```
 
-`revert`: Reverting a previous commit
+### `merge` — 🔀 (Shuffle)
+
+Merging branches.
 
 ```markdown
-revert: Revert "Add feature"
+merge: 🔀 Merge branch 'feature/login' into develop
 ```
 
-`build`: Making changes to the build system or dependencies of the project
+### `revert` — ⏪ (Rewind)
+
+Reverting a previous commit.
 
 ```markdown
-build: Update dependencies
+revert: ⏪ Revert "Add feature"
 ```
 
-`ci`: Making changes to the continuous integration (CI) system for the project
+### `build` — 📦 (Package)
+
+Making changes to the build system, packing scripts, or external dependencies.
 
 ```markdown
-ci: Update CI configuration
+build: 📦 Update dependencies
 ```
 
-`config`: Making changes to configuration files for the project
+### `ci` — 👷 (Construction Worker)
+
+Making changes to CI configurations or workflow scripts (GitHub Actions, GitLab CI).
 
 ```markdown
-config: Update configuration files
+ci: 👷 Update CI workflow configuration
 ```
 
-`deploy`: Making changes to the deployment process for the project
+### `config` — ⚙️ (Gear)
+
+Making changes to configuration files (linter settings, git configs).
 
 ```markdown
-deploy: Update deployment scripts
+config: ⚙️ Update markdownlint rules configuration
 ```
 
-`init`: Creating or initializing a new repository or project
+### `deploy` — 🚀 (Rocket)
+
+Making changes to the deployment scripts, staging, or production environments.
 
 ```markdown
-init: Initialize project
+deploy: 🚀 Update deployment scripts
 ```
 
-`move`: Moving files or directories within the project
+### `init` — 🎉 (Party Popper)
+
+Creating or initializing a new repository, module, or project.
 
 ```markdown
-move: Move files to new directory
+init: 🎉 Initialize project boilerplate
 ```
 
-`rename`: Renaming files or directories within the project
+### `move` — 🚚 (Delivery Truck)
+
+Moving files or directories within the project.
 
 ```markdown
-rename: Rename files
+move: 🚚 Move source files to new folder
 ```
 
-`remove`: Removing files or directories from the project
+### `rename` — 🏷️ (Label)
+
+Renaming files, folders, or directories.
 
 ```markdown
-remove: Remove files
+rename: 🏷️ Rename files
 ```
 
-`update`: Updating code, dependencies, or other components of the project
+### `remove` — 🔥 (Fire)
+
+Removing files, dead code, or directories.
 
 ```markdown
-update: Update code
+remove: 🔥 Remove legacy config files
 ```
 
-These are just some examples, and you can create your own custom commit types as well. However, it's important to use them consistently and write clear, descriptive commit messages to make it easy for others to understand the changes you've made.
+### `update` — 🔄 (Circular Arrows)
 
-**Important:** If you are planning to use a custom commit message type other than the ones listed above, make sure to add it to this list so that others can understand it as well. Create a pull request to add it to this file.
+Updating code, components, or minor dependencies.
+
+```markdown
+update: 🔄 Update code structure
+```
+
+---
+
+## Guidelines for Custom Types
+
+If you are planning to use a custom commit message type other than the ones listed above, make sure to add it to this list so that others can understand it as well. Create a pull request to add it to this file.
