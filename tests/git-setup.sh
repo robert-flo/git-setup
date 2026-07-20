@@ -129,6 +129,15 @@ printf 'q\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-output"
 require_output "$TEST_ROOT/menu-output" 'Git + GitHub + GPG Configuration for Arch Linux'
 require_output "$TEST_ROOT/menu-output" 'Choose an action'
 require_output "$TEST_ROOT/menu-output" 'Verify current configuration'
+require_output "$TEST_ROOT/menu-output" 'Help and usage'
+
+# Help is available from both the direct command and the interactive menu.
+run_setup "$CUSTOM_HOME" help > "$TEST_ROOT/help-output"
+require_output "$TEST_ROOT/help-output" 'GITHUB TOKEN'
+require_output "$TEST_ROOT/help-output" 'CONFIGURATION FILES'
+printf 'h\n\nq\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-help-output"
+require_output "$TEST_ROOT/menu-help-output" 'RECOMMENDED FLOW'
+[[ $(grep -Fc 'Choose an action' "$TEST_ROOT/menu-help-output") -eq 2 ]] || fail 'menu did not return after help'
 
 # A failed verification in the interactive menu must still return to the menu
 # after the user acknowledges the result.
