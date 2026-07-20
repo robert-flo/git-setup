@@ -11,10 +11,10 @@ Clona el repositorio y ejecuta el binario desde su raíz:
 ```bash
 git clone https://github.com/robert-flo/git-setup---hermes-agent-era.git
 cd git-setup---hermes-agent-era
-./bin/git-setup config
+./git-setup config
 ```
 
-También puedes añadir `bin/` a tu `PATH`.
+También puedes añadir la raíz del repositorio a tu `PATH`.
 
 ## Comandos
 

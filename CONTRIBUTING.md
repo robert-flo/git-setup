@@ -8,7 +8,7 @@ Necesitas Bash, Git y ShellCheck. Ejecuta las pruebas antes de abrir un cambio:
 
 ```bash
 for test_file in tests/*.sh; do bash "$test_file"; done
-shellcheck bin/git-setup lib/global_fn.sh tests/*.sh
+shellcheck git-setup helper/set_variable.sh bin/git-setup lib/global_fn.sh tests/*.sh
 ```
 
 ## Cambios seguros
