@@ -76,6 +76,7 @@ default_config="$DEFAULT_HOME/.config/git/config"
 # shellcheck disable=SC2088 # The configured value intentionally contains a literal tilde.
 [[ $(git config --file "$default_config" --get user.signingkey) == '~/.ssh/id_ed25519.pub' ]] || fail 'SSH signing key was not generated'
 [[ $(git config --file "$default_config" --get gpg.format) == 'ssh' ]] || fail 'SSH signing format was not generated'
+[[ $(git config --file "$default_config" --get core.pager) == 'delta' ]] || fail 'Delta pager was not generated'
 require_output "$TEST_ROOT/default-config-output" 'Git Configuration Files'
 require_output "$TEST_ROOT/default-config-output" 'Git + GitHub + GPG Configuration for Arch Linux'
 require_output "$TEST_ROOT/default-config-output" 'Created:'
