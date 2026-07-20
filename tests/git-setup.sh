@@ -119,4 +119,9 @@ require_output "$TEST_ROOT/menu-output" 'Git + GitHub + GPG Configuration for Ar
 require_output "$TEST_ROOT/menu-output" 'Choose an action'
 require_output "$TEST_ROOT/menu-output" 'Verify current configuration'
 
+# A failed verification in the interactive menu must still return to the menu
+# after the user acknowledges the result.
+printf '1\n\nq\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-return-output"
+[[ $(grep -Fc 'Choose an action' "$TEST_ROOT/menu-return-output") -eq 2 ]] || fail 'menu did not return after verification'
+
 printf 'PASS: git-setup managed configuration and interactive workflow\n'
