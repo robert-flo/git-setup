@@ -196,10 +196,13 @@ main() {
     show_menu
     read -r choice
     case $choice in
-      1) do_verify ;;
-      2) do_setup ;;
-      3) run_test ;;
-      4) do_clean ;;
+      # An interactive action may report missing configuration with a non-zero
+      # status. Keep the menu alive so the user can read the result and choose
+      # the next action; direct subcommands retain their exit status above.
+      1) do_verify || true ;;
+      2) do_setup || true ;;
+      3) run_test || true ;;
+      4) do_clean || true ;;
       q | Q)
         echo ""
         print_info "Goodbye!"
@@ -216,4 +219,3 @@ main() {
 }
 
 main "$@"
-
