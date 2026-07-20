@@ -160,3 +160,18 @@ awk -v heading="### $category" -v entry="$entry" '
   END { exit !inserted }
 ' "$changelog_file" > "$temporary_file"
 mv "$temporary_file" "$changelog_file"
+
+# Keep a final newline without leaving a blank line at EOF, which would fail
+# the repository's whitespace check after an otherwise valid generation.
+awk '
+  NF {
+    while (trailing_blank_lines > 0) {
+      print ""
+      trailing_blank_lines -= 1
+    }
+    print
+    next
+  }
+  { trailing_blank_lines += 1 }
+' "$changelog_file" > "$temporary_file"
+mv "$temporary_file" "$changelog_file"
