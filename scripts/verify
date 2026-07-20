@@ -33,32 +33,6 @@ get_gpg_key_id() {
   echo "$key_id"
 }
 
-# ┌──────────────────────────────────────────────────────────────────────────────┐
-# │ Verification Functions                                                       │
-# └──────────────────────────────────────────────────────────────────────────────┘
-
-verify_dependencies() {
-  print_section "${ICON_PACKAGE} Checking Dependencies"
-
-  local missing=0
-
-  for cmd in git gh gpg ssh-keygen; do
-    if command_exists "$cmd"; then
-      print_success "$cmd installed"
-    else
-      print_error "$cmd not found"
-      missing=1
-    fi
-  done
-
-  if ((missing == 1)); then
-    echo ""
-    print_info "Install missing packages on Arch Linux:"
-    echo -e "${GRAY}    sudo pacman -S git github-cli gnupg openssh git-delta${NC}"
-    exit 1
-  fi
-}
-
 verify_git_config() {
   print_section "${ICON_GIT} Git Configuration"
 
@@ -419,7 +393,6 @@ verify_github_auth() {
 }
 
 do_verify() {
-  verify_dependencies
   verify_git_config
   verify_generated_git_config_files
   verify_ssh

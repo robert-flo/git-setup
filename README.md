@@ -1,7 +1,7 @@
 # git-setup
 
-An interactive Git, GitHub, SSH, and GPG configuration assistant for Arch
-Linux. `git-setup` creates a reproducible Git configuration under
+An interactive Git, GitHub, SSH, and GPG configuration assistant for Linux.
+`git-setup` creates a reproducible Git configuration under
 `~/.config/git`, guides a complete setup from one terminal menu, and keeps
 personal overrides separate from generated files.
 
@@ -11,6 +11,28 @@ personal overrides separate from generated files.
 
 <a id="installation"></a>
 <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=INSTALLATION" width="450"/>
+
+### Linux Dependencies
+
+The source workflow supports Arch Linux, Ubuntu/Debian, and Fedora. Install the
+required commands for your distribution before starting `git-setup`:
+
+```shell
+# Arch Linux
+sudo pacman -S --needed git github-cli gnupg openssh git-delta
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install git gh gnupg openssh-client git-delta
+
+# Fedora
+sudo dnf install git gh gnupg2 openssh-clients git-delta
+```
+
+At startup, `git-setup` checks for `git`, `gh`, `gpg`, `ssh-keygen`, and
+`delta`. If one is missing, it stops before changing configuration, recommends
+the detected package manager first, and shows the equivalent commands for the
+other supported Linux families. It never installs packages or runs privileged
+commands for you.
 
 ### From Source
 

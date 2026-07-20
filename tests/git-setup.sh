@@ -40,7 +40,7 @@ mkdir -p "$TEST_BIN" "$DEFAULT_HOME" "$CUSTOM_HOME"
 
 # Keep tests offline and prevent access to the developer's GitHub, SSH, or GPG
 # sessions. The commands are present so `verify` exercises its complete flow.
-for command in gh ssh ssh-add pgrep; do
+for command in gh ssh ssh-add pgrep delta; do
   printf '%s\n' '#!/usr/bin/env bash' 'exit 1' > "$TEST_BIN/$command"
   chmod +x "$TEST_BIN/$command"
 done
@@ -54,6 +54,87 @@ printf '%s\n' \
   'esac' \
   'exit 0' > "$TEST_BIN/gpg"
 chmod +x "$TEST_BIN/gpg"
+
+# Missing dependencies stop the public command before it does any work. The
+# detected package manager is guidance only: neither it nor sudo may run.
+MISSING_DEPENDENCY_BIN="$TEST_ROOT/missing-dependency-bin"
+DEPENDENCY_EXECUTION_MARKER="$TEST_ROOT/dependency-command-executed"
+MISSING_DEPENDENCY_HOME="$TEST_ROOT/missing-dependency-home"
+mkdir -p "$MISSING_DEPENDENCY_BIN" "$MISSING_DEPENDENCY_HOME"
+
+for command in bash chmod cp dirname git mkdir realpath gpg ssh-keygen; do
+  ln -s "$(command -v "$command")" "$MISSING_DEPENDENCY_BIN/$command"
+done
+
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$MISSING_DEPENDENCY_BIN/delta"
+# shellcheck disable=SC2016 # The generated stubs expand these values when run.
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf "executed: %s\n" "${0##*/}" >> "$DEPENDENCY_EXECUTION_MARKER"' \
+  'exit 99' > "$MISSING_DEPENDENCY_BIN/apt"
+cp "$MISSING_DEPENDENCY_BIN/apt" "$MISSING_DEPENDENCY_BIN/sudo"
+chmod +x "$MISSING_DEPENDENCY_BIN/delta" "$MISSING_DEPENDENCY_BIN/apt" "$MISSING_DEPENDENCY_BIN/sudo"
+
+missing_dependency_status=0
+PATH="$MISSING_DEPENDENCY_BIN" \
+  HOME="$MISSING_DEPENDENCY_HOME" \
+  XDG_CONFIG_HOME="$MISSING_DEPENDENCY_HOME/.config" \
+  TERM=dumb \
+  DEPENDENCY_EXECUTION_MARKER="$DEPENDENCY_EXECUTION_MARKER" \
+  "$GIT_SETUP" config > "$TEST_ROOT/missing-dependency-output" 2>&1 || missing_dependency_status=$?
+
+((missing_dependency_status != 0)) || fail 'missing dependency did not stop git-setup'
+require_output "$TEST_ROOT/missing-dependency-output" 'gh not found'
+require_output "$TEST_ROOT/missing-dependency-output" 'Ubuntu/Debian (detected):'
+require_output "$TEST_ROOT/missing-dependency-output" 'sudo apt install git gh gnupg openssh-client git-delta'
+require_output "$TEST_ROOT/missing-dependency-output" 'Arch Linux:'
+require_output "$TEST_ROOT/missing-dependency-output" 'sudo pacman -S --needed git github-cli gnupg openssh git-delta'
+require_output "$TEST_ROOT/missing-dependency-output" 'Fedora:'
+require_output "$TEST_ROOT/missing-dependency-output" 'sudo dnf install git gh gnupg2 openssh-clients git-delta'
+[[ ! -e $DEPENDENCY_EXECUTION_MARKER ]] || fail 'dependency guidance executed a privileged package command'
+[[ ! -e $MISSING_DEPENDENCY_HOME/.config/git/config ]] || fail 'missing dependency allowed configuration changes'
+
+# Each other supported manager is also selected when it is the available one.
+for package_manager in pacman dnf; do
+  manager_bin="$TEST_ROOT/$package_manager-bin"
+  mkdir -p "$manager_bin"
+  for command in bash dirname realpath git gpg ssh-keygen; do
+    ln -s "$(command -v "$command")" "$manager_bin/$command"
+  done
+  printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$manager_bin/delta"
+  printf '%s\n' '#!/usr/bin/env bash' 'exit 99' > "$manager_bin/$package_manager"
+  chmod +x "$manager_bin/delta" "$manager_bin/$package_manager"
+
+  manager_status=0
+  PATH="$manager_bin" TERM=dumb \
+    "$GIT_SETUP" help > "$TEST_ROOT/$package_manager-output" 2>&1 || manager_status=$?
+  ((manager_status != 0)) || fail "$package_manager guidance did not stop git-setup"
+
+  case $package_manager in
+    pacman) require_output "$TEST_ROOT/$package_manager-output" 'Arch Linux (detected):' ;;
+    dnf) require_output "$TEST_ROOT/$package_manager-output" 'Fedora (detected):' ;;
+  esac
+done
+
+# Without a supported package manager, the failure names every required
+# command and still gives the user all three supported installation paths.
+NO_PACKAGE_MANAGER_BIN="$TEST_ROOT/no-package-manager-bin"
+mkdir -p "$NO_PACKAGE_MANAGER_BIN"
+for command in bash dirname realpath; do
+  ln -s "$(command -v "$command")" "$NO_PACKAGE_MANAGER_BIN/$command"
+done
+
+no_package_manager_status=0
+PATH="$NO_PACKAGE_MANAGER_BIN" TERM=dumb \
+  "$GIT_SETUP" help > "$TEST_ROOT/no-package-manager-output" 2>&1 || no_package_manager_status=$?
+
+((no_package_manager_status != 0)) || fail 'missing dependencies without a package manager did not stop git-setup'
+require_output "$TEST_ROOT/no-package-manager-output" 'Missing commands: git gh gpg ssh-keygen delta'
+require_output "$TEST_ROOT/no-package-manager-output" 'No supported package manager detected (pacman, apt, or dnf).'
+require_output "$TEST_ROOT/no-package-manager-output" 'Install packages that provide: git gh gpg ssh-keygen delta.'
+require_output "$TEST_ROOT/no-package-manager-output" 'sudo pacman -S --needed git github-cli gnupg openssh git-delta'
+require_output "$TEST_ROOT/no-package-manager-output" 'sudo apt install git gh gnupg openssh-client git-delta'
+require_output "$TEST_ROOT/no-package-manager-output" 'sudo dnf install git gh gnupg2 openssh-clients git-delta'
 
 generated_files=(
   config

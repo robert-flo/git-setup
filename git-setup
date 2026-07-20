@@ -144,6 +144,8 @@ BANNER_EOF
 }
 
 main() {
+  verify_dependencies || return 1
+
   clear || true
   show_ravn_banner
 

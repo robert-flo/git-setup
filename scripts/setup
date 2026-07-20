@@ -215,7 +215,6 @@ EOF
 }
 
 do_setup() {
-  verify_dependencies
   setup_github_auth
   generate_git_config_files
   setup_ssh_key
