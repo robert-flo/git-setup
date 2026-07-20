@@ -16,6 +16,20 @@ cd git-setup---hermes-agent-era
 
 También puedes añadir la raíz del repositorio a tu `PATH`.
 
+## Prueba aislada en Arch Linux
+
+Para probar el asistente sin modificar tu `$HOME`, crea un contenedor efímero:
+
+```bash
+docker build -t git-setup .
+docker run --rm -it git-setup
+```
+
+El contenedor inicia `git-setup` directamente e incluye Git, GitHub CLI, GnuPG,
+OpenSSH y Git Delta. Si eliges el setup completo, proporciona el token de
+GitHub sólo en el prompt del contenedor. No montes tu directorio personal ni
+persistas el contenedor si quieres conservar el entorno completamente aislado.
+
 ## Comandos
 
 ```bash
