@@ -92,6 +92,10 @@ jobs:
         shell: bash
         run: bash tests/docker-make.sh
 
+      - name: Run Git Make tests
+        shell: bash
+        run: bash tests/git-make.sh
+
       - name: Run changelog automation tests
         shell: bash
         run: bash tests/changelog-automation.sh
