@@ -40,6 +40,7 @@ for command in gh ssh ssh-add pgrep; do
   chmod +x "$TEST_BIN/$command"
 done
 
+# shellcheck disable=SC2016 # The stub must receive a literal parameter expansion.
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'case "${1:-}" in' \
@@ -67,6 +68,7 @@ done
 default_config="$DEFAULT_HOME/.config/git/config"
 [[ $(git config --file "$default_config" --get user.name) == 'Roberto Flores' ]] || fail 'default name was not generated'
 [[ $(git config --file "$default_config" --get user.email) == '25asab015@ujmd.edu.sv' ]] || fail 'default email was not generated'
+# shellcheck disable=SC2088 # The configured value intentionally contains a literal tilde.
 [[ $(git config --file "$default_config" --get user.signingkey) == '~/.ssh/id_ed25519.pub' ]] || fail 'SSH signing key was not generated'
 [[ $(git config --file "$default_config" --get gpg.format) == 'ssh' ]] || fail 'SSH signing format was not generated'
 require_output "$TEST_ROOT/default-config-output" 'Git Configuration Files'
@@ -97,6 +99,7 @@ done
 # Clean must disclose the managed files and remain non-destructive until 'yes'.
 printf 'no\n' | run_setup "$CUSTOM_HOME" clean > "$TEST_ROOT/clean-output"
 require_output "$TEST_ROOT/clean-output" 'Git Configuration:'
+# shellcheck disable=SC2088 # The expected user-facing path intentionally contains a literal tilde.
 require_output "$TEST_ROOT/clean-output" '~/.config/git/config'
 require_output "$TEST_ROOT/clean-output" 'gitconfig.local will be preserved'
 require_output "$TEST_ROOT/clean-output" 'Cancelled'
