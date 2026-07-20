@@ -1,79 +1,145 @@
 # git-setup
 
-`git-setup` prepara una configuración de Git reproducible y separada de tus
-dotfiles: archivos de configuración, identidad, firma de commits y un flujo
-guiado para GitHub, SSH y GPG.
+An interactive Git, GitHub, SSH, and GPG configuration assistant for Arch
+Linux. `git-setup` creates a reproducible Git configuration under
+`~/.config/git`, guides a complete setup from one terminal menu, and keeps
+personal overrides separate from generated files.
 
-## Instalación
+---
 
-Clona el repositorio y ejecuta el binario desde su raíz:
+<br>
 
-```bash
+<a id="installation"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=INSTALLATION" width="450"/>
+
+### From Source
+
+Clone the repository and start the interactive assistant:
+
+```shell
 git clone https://github.com/robert-flo/git-setup---hermes-agent-era.git
 cd git-setup---hermes-agent-era
-./git-setup config
+./git-setup
 ```
 
-También puedes añadir la raíz del repositorio a tu `PATH`.
+Choose **Run full setup** on the first run. It asks for your GitHub token,
+name, and email; creates the managed Git files; configures SSH and GPG; and
+lets you choose SSH, GPG, or no commit signing.
 
-## Prueba aislada en Arch Linux
+For automation, pass the identity without prompts:
 
-Para probar el asistente sin modificar tu `$HOME`, crea un contenedor efímero:
-
-```bash
-docker build -t git-setup .
-docker run --rm -it git-setup
+```shell
+NAME='Ada Lovelace' EMAIL='ada@example.com' ./git-setup config
 ```
 
-El contenedor inicia `git-setup` directamente e incluye Git, GitHub CLI, GnuPG,
-OpenSSH y Git Delta. Si eliges el setup completo, proporciona el token de
-GitHub sólo en el prompt del contenedor. No montes tu directorio personal ni
-persistas el contenedor si quieres conservar el entorno completamente aislado.
+---
 
-## Comandos
+<br>
 
-```bash
-git-setup config                         # genera ~/.config/git
-git-setup setup                          # GitHub, SSH, GPG y firma Git
-git-setup verify                         # audita la configuración completa
-git-setup test                           # prueba commits y firma
-git-setup clean                          # elimina la configuración creada
+<a id="github-token"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=GITHUB%20TOKEN" width="450"/>
+
+Before running **Run full setup**, create a GitHub Personal Access Token and
+save it in a password manager such as 1Password or Bitwarden.
+
+`git-setup` uses this token to connect GitHub CLI with your account and add the
+SSH, SSH-signing, and GPG public keys created during setup. Keep the token in
+your password manager so you can reuse it whenever you configure a new machine.
+
+See [how to create a GitHub token](docs/github-token.md) for the required
+scopes and GitHub web steps.
+
+---
+
+<br>
+
+<a id="docker"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=TRY%20IT%20IN%20DOCKER" width="450"/>
+
+Run the assistant in an isolated `archlinux:latest` container before using it
+with your real home directory:
+
+```shell
+make docker-run
 ```
 
-## Identidad y personalización
+The command builds `git-setup:local` when needed and starts an interactive,
+ephemeral container. It is removed on exit and does not mount your `$HOME`.
+The RaVN banner confirms this mode with `󰡨 Running inside Docker`.
 
-Evita prompts en instalaciones automatizadas con `NAME` y `EMAIL`:
+If you want to manage the local image explicitly:
 
-```bash
-NAME='Ada Lovelace' EMAIL='ada@example.com' git-setup config
+```shell
+make docker-build
+make docker-run
+make docker-clean
 ```
 
-`gitconfig.local` nunca se genera, actualiza ni elimina. Úsalo para valores
-locales que deban sobrevivir una actualización de plantillas.
+The Docker environment lets you try the complete setup flow before using your
+real home directory. Use your saved token when prompted; SSH and GPG keys
+created inside the container do not persist on your computer when it exits.
+Their public keys are still added to GitHub as part of the complete setup flow.
 
-```bash
+---
+
+<br>
+
+<a id="commands"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=COMMANDS" width="450"/>
+
+```shell
+git-setup config    # generate ~/.config/git managed files
+git-setup setup     # configure GitHub, SSH, GPG, and signing
+git-setup verify    # audit the current configuration
+git-setup test      # create and verify a signed test commit
+git-setup clean     # remove the configuration after typing yes
+```
+
+Run `git-setup` without arguments to return to the interactive menu. The
+integration test requires the Git name and email created by **Run full setup**;
+otherwise it explains the prerequisite and does not offer a GitHub push.
+
+## Personal Git Customization
+
+Generated files are refreshed by `git-setup config` and `git-setup setup`.
+Use the optional file below for settings that must survive those refreshes:
+
+```shell
 nvim ~/.config/git/gitconfig.local
 ```
 
-`clean` solicita escribir `yes` antes de actuar.
+`gitconfig.local` is loaded last and is never generated, updated, or removed.
 
-## Seguridad
+---
 
-- El token de GitHub se lee sin eco y no se muestra en la salida.
-- Las claves GPG nuevas usan el diálogo de frase de paso de GPG.
-- Antes de usar `setup`, revisa los permisos y el alcance del token de GitHub.
+<br>
 
-## Desarrollo
+<a id="security"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=SECURITY" width="450"/>
 
-Ejecuta las pruebas locales:
+- GitHub tokens are read without echoing them to the terminal.
+- New GPG keys use the normal GPG passphrase dialog.
+- Review token permissions before using **Run full setup**.
+- `clean` requires an explicit `yes` before deleting local configuration.
 
-```bash
-for test_file in tests/*.sh; do bash "$test_file"; done
-```
+---
 
-ShellCheck y las pruebas se ejecutan también en GitHub Actions. Consulta
-[CONTRIBUTING.md](CONTRIBUTING.md) para el flujo de contribución.
+<br>
 
-## Licencia
+<a id="contributing"></a>
+<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=CONTRIBUTING" width="450"/>
 
-MIT. Consulta [LICENSE](LICENSE).
+- Prefer a clear, well-written issue describing a bug or feature over an
+  unfocused pull request.
+- Every change is reviewed line by line and should preserve the established
+  RaVN terminal workflow.
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) for local checks and the pull-request
+  workflow.
+
+---
+
+<br>
+
+## License
+
+This project is released under the [MIT License](LICENSE).
