@@ -47,6 +47,7 @@ source "$PROJECT_DIR/scripts/test"
 source "$PROJECT_DIR/scripts/clean"
 
 is_running_in_docker() {
+  [[ ${GIT_SETUP_DOCKER_TRIAL:-} == 1 ]] && return 0
   [[ -f /.dockerenv ]] && return 0
   [[ -r /proc/1/cgroup ]] && grep -qaE '/(docker|containerd)(/|$)' /proc/1/cgroup
 }
@@ -150,7 +151,12 @@ BANNER_EOF
 }
 
 main() {
-  clear_screen
+  # docker-run prints its isolation notice immediately before launching us.
+  # Preserve that context on the first screen inside a container; subsequent
+  # menu navigation can still use clear_screen normally.
+  if ! is_running_in_docker; then
+    clear_screen
+  fi
   verify_dependencies || return 1
 
   show_ravn_banner

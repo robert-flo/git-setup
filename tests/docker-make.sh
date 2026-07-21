@@ -43,8 +43,18 @@ grep -Fqx 'build --file docker/fedora.Dockerfile --tag git-setup:fedora-local .'
 PATH="$TEST_BIN:$PATH" DOCKER_LOG="$DOCKER_LOG" \
   make --no-print-directory docker-run DOCKER_ENV=fedora > "$TEST_ROOT/fedora-run-output"
 
-grep -Fqx 'run --rm -it git-setup:fedora-local' "$DOCKER_LOG" || \
+grep -Fqx 'build --file docker/fedora.Dockerfile --tag git-setup:fedora-local .' "$DOCKER_LOG" || \
+  fail 'docker-run did not rebuild the selected image'
+grep -Fqx 'run --rm -it --env GIT_SETUP_DOCKER_TRIAL=1 git-setup:fedora-local' "$DOCKER_LOG" || \
   fail 'Fedora run was not interactive and ephemeral'
+grep -Fq 'git-setup · ephemeral Docker trial' "$TEST_ROOT/fedora-run-output" || \
+  fail 'docker-run did not show the ephemeral trial banner'
+grep -Eq 'Starting git-setup in .*Fedora' "$TEST_ROOT/fedora-run-output" || \
+  fail 'docker-run did not name the selected environment'
+grep -Fq 'GitHub actions are external' "$TEST_ROOT/fedora-run-output" || \
+  fail 'docker-run did not warn about external GitHub actions'
+grep -Fq 'Ephemeral container removed. Local host unchanged.' "$TEST_ROOT/fedora-run-output" || \
+  fail 'docker-run did not confirm container cleanup'
 
 : > "$DOCKER_LOG"
 PATH="$TEST_BIN:$PATH" DOCKER_LOG="$DOCKER_LOG" \

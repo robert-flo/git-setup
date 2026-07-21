@@ -12,10 +12,14 @@ endif
 DOCKER_IMAGE_arch := git-setup:local
 DOCKER_IMAGE_ubuntu := git-setup:ubuntu-local
 DOCKER_IMAGE_fedora := git-setup:fedora-local
+DOCKER_ENV_LABEL_arch := Arch Linux
+DOCKER_ENV_LABEL_ubuntu := Ubuntu
+DOCKER_ENV_LABEL_fedora := Fedora
 DOCKERFILE_arch := Dockerfile
 DOCKERFILE_ubuntu := docker/ubuntu.Dockerfile
 DOCKERFILE_fedora := docker/fedora.Dockerfile
 DOCKER_IMAGE ?= $(DOCKER_IMAGE_$(DOCKER_ENV))
+DOCKER_ENV_LABEL := $(DOCKER_ENV_LABEL_$(DOCKER_ENV))
 DOCKERFILE := $(DOCKERFILE_$(DOCKER_ENV))
 DOCKER_TEST_IMAGES := git-setup:local git-setup:ubuntu-local git-setup:fedora-local
 
@@ -40,10 +44,24 @@ docker-build: ## Build the local Docker image
 
 docker-run: ## Run git-setup interactively in an ephemeral container
 	@command -v docker > /dev/null || { printf "$(RED)Docker is not installed$(NC)\n"; exit 1; }
-	@if ! docker image inspect "$(DOCKER_IMAGE)" > /dev/null 2>&1; then \
-		$(MAKE) --no-print-directory docker-build; \
-	fi
-	@docker run --rm -it "$(DOCKER_IMAGE)"
+	@$(MAKE) --no-print-directory docker-build
+	@printf "\n"
+	@printf "$(CYAN)󰡨  git-setup · ephemeral Docker trial$(NC)\n"
+	@printf "$(CYAN)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
+	@printf "  $(DIM)Isolated container — your local home directory is not mounted.$(NC)\n"
+	@printf "  $(DIM)Files, SSH keys, and GPG keys created inside are removed when you exit.$(NC)\n"
+	@printf "\n"
+	@printf "  $(BLUE)▸$(NC) Starting git-setup in $(CYAN)$(DOCKER_ENV_LABEL)$(NC)...\n"
+	@printf "  $(BLUE)▸$(NC) Use your saved GitHub token only if you want to test the full setup.\n"
+	@printf "\n"
+	@printf "$(YELLOW)  Note: GitHub actions are external.$(NC)\n"
+	@printf "$(YELLOW)  If you authenticate and complete setup, public keys may still be added to GitHub.$(NC)\n"
+	@printf "\n"
+	@docker run --rm -it --env GIT_SETUP_DOCKER_TRIAL=1 "$(DOCKER_IMAGE)"; status=$$?; \
+		printf "\n"; \
+		printf "  $(GREEN)✓$(NC) Ephemeral container removed. Local host unchanged.\n"; \
+		printf "\n"; \
+		exit $$status
 
 docker-clean: ## Remove the local Docker image
 	@command -v docker > /dev/null || { printf "$(RED)Docker is not installed$(NC)\n"; exit 1; }
