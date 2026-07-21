@@ -36,7 +36,7 @@ help-aliases: ## Show Git compatibility aliases
 	@printf "%-20s %-25s %s\n" "dc" "docker-clean" "Remove the local Docker image"
 	@printf "\n"
 
-# Git operation aliases
+# === Git Operations (git-) ===
 git-a: git-add
 git-c: git-commit
 git-ac: git-add-commit
@@ -53,7 +53,7 @@ git-df: git-diff-fuzzy
 git-fc: git-search
 git-fm: git-search
 
-# Short Git aliases
+# === Short Git Aliases ===
 a: git-add
 c: git-commit
 cm: git-cm
