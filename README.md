@@ -155,8 +155,8 @@ make s
 ```
 
 The managed commands are `a`, `c`, `cm`, `ac`, `p`, `l`, `st`, `s`, `d`, `lg`,
-`af`, `fuck`, `bye`, `clean`, `df`, `fc`, and `fm`. The Make companions travel
-with the repository fragment, so `make s` remains usable in a repository that
+`af`, `fuck`, `bye`, `clean`, `df`, `fc`, and `fm`. The Make companions live in
+`make/workflow/` and travel with the repository fragment, so `make s` remains usable in a repository that
 has not run `git-setup config`.
 
 `clean` is the one Git-surface exception: Git's native `git clean` cannot be

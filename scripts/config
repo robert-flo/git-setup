@@ -98,7 +98,7 @@ generate_git_config_files() {
 }
 
 install_managed_workflow_commands() {
-  local workflow_source_dir="$PROJECT_DIR/make"
+  local workflow_source_dir="$PROJECT_DIR/make/workflow"
   local -a workflow_files=(.git-workflow a c cm ac p l st s d lg af fuck bye clean df fc fm)
   local workflow_file=""
   local action=""

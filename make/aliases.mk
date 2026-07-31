@@ -37,9 +37,9 @@ help-aliases: ## Show Git compatibility aliases
 	@printf "\n"
 
 # === Portable Git workflow adapters ===
-# Keep this Make fragment portable: each target resolves its executable beside
-# this file instead of requiring a prior git-setup installation.
-GIT_WORKFLOW_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+# Keep this Make fragment portable: each target resolves its executable from
+# the bundled workflow directory instead of requiring a prior git-setup install.
+GIT_WORKFLOW_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))workflow/
 workflow_quote = '$(subst ','"'"'",$(1))'
 define run_workflow
 	@WORKFLOW_ARGUMENT=$(call workflow_quote,$(2)) "$(GIT_WORKFLOW_DIR)$(1)"

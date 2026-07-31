@@ -43,8 +43,8 @@ printf 'untracked\n' > "$REPOSITORY/untracked.txt"
 # three workflow surfaces.
 (
   cd "$REPOSITORY"
-  make --no-print-directory git-status | sed '/✓ done/,$d; s/  [0-9][0-9]* [a-z]* ago/  <relative-time>/g' > "$TEST_ROOT/make-status"
-  ./make/s | sed '/✓ done/,$d; s/  [0-9][0-9]* [a-z]* ago/  <relative-time>/g' > "$TEST_ROOT/direct-status"
+  make --no-print-directory git-status | sed -E -e 's/\x1B\[[0-9;]*m//g' -e '/✓ done/,$d' -e 's/[[:space:]]+[0-9]+ [[:alpha:]]+ ago[[:space:]]*$/  <relative-time>/' > "$TEST_ROOT/make-status"
+  ./make/workflow/s | sed -E -e 's/\x1B\[[0-9;]*m//g' -e '/✓ done/,$d' -e 's/[[:space:]]+[0-9]+ [[:alpha:]]+ ago[[:space:]]*$/  <relative-time>/' > "$TEST_ROOT/direct-status"
 )
 cmp "$TEST_ROOT/make-status" "$TEST_ROOT/direct-status" || fail 'direct status changed the Make status body'
 
@@ -53,7 +53,7 @@ git -C "$REPOSITORY" config alias.s "$(git config --file "$ROOT_DIR/templates/gi
 mkdir "$REPOSITORY/nested"
 (
   cd "$REPOSITORY/nested"
-  PATH="$REPOSITORY/make:$PATH" git s > "$TEST_ROOT/git-status"
+  PATH="$REPOSITORY/make/workflow:$PATH" git s > "$TEST_ROOT/git-status"
 )
 sed -E 's/\x1B\[[0-9;]*m//g' "$TEST_ROOT/git-status" > "$TEST_ROOT/git-status-plain"
 grep -Fq "path:      $REPOSITORY/nested" "$TEST_ROOT/git-status-plain" || \
@@ -62,6 +62,26 @@ grep -Fq 'stage and commit:' "$TEST_ROOT/git-status" || fail 'status omitted Qui
 grep -Fq 'git ac' "$TEST_ROOT/git-status" || fail 'status did not teach the Git workflow surface'
 grep -Fq 'make ac' "$TEST_ROOT/git-status" || fail 'status did not teach the Make workflow surface'
 require_aligned_quick_actions "$TEST_ROOT/git-status" 'git s'
+(
+  cd "$REPOSITORY/nested"
+  PATH="$REPOSITORY/make/workflow:$PATH" s > "$TEST_ROOT/direct-nested-status"
+)
+sed -E 's/\x1B\[[0-9;]*m//g' "$TEST_ROOT/direct-nested-status" > "$TEST_ROOT/direct-nested-status-plain"
+grep -Fq "path:      $REPOSITORY/nested" "$TEST_ROOT/direct-nested-status-plain" || \
+  fail 'direct s did not preserve the subdirectory invocation context'
+cmp "$TEST_ROOT/git-status-plain" "$TEST_ROOT/direct-nested-status-plain" || \
+  fail 'direct s changed the git s output from the same subdirectory'
+(
+  cd "$REPOSITORY"
+  ./make/workflow/s > "$TEST_ROOT/direct-short-status"
+  make --no-print-directory s > "$TEST_ROOT/make-short-status"
+)
+for status_output in direct-short-status make-short-status; do
+  sed -E -e 's/\x1B\[[0-9;]*m//g' -e 's/[[:space:]]+[0-9]+ [[:alpha:]]+ ago[[:space:]]*$/  <relative-time>/' \
+    "$TEST_ROOT/$status_output" > "$TEST_ROOT/$status_output-plain"
+done
+cmp "$TEST_ROOT/direct-short-status-plain" "$TEST_ROOT/make-short-status-plain" || \
+  fail 'make s changed the direct workflow output'
 (
   cd "$REPOSITORY"
   make --no-print-directory git-status
@@ -73,7 +93,7 @@ require_aligned_quick_actions "$TEST_ROOT/long-make-status" 'make git-status'
 for command in a c ac p l st s d lg af fuck bye clean df; do
   (
     cd "$REPOSITORY"
-    PATH="$TEST_BIN:$PATH" DRY_RUN=1 "./make/$command" > "$TEST_ROOT/direct-$command"
+    PATH="$TEST_BIN:$PATH" DRY_RUN=1 "./make/workflow/$command" > "$TEST_ROOT/direct-$command"
     PATH="$TEST_BIN:$PATH" DRY_RUN=1 make --no-print-directory "$command" > "$TEST_ROOT/make-$command"
   )
   [[ -s $TEST_ROOT/direct-$command ]] || fail "direct $command produced no public output"
@@ -82,7 +102,7 @@ done
 for command in cm fc fm; do
   (
     cd "$REPOSITORY"
-    PATH="$TEST_BIN:$PATH" DRY_RUN=1 "./make/$command" 'workflow query' > "$TEST_ROOT/direct-$command"
+    PATH="$TEST_BIN:$PATH" DRY_RUN=1 "./make/workflow/$command" 'workflow query' > "$TEST_ROOT/direct-$command"
     PATH="$TEST_BIN:$PATH" DRY_RUN=1 make --no-print-directory "$command" 'workflow query' > "$TEST_ROOT/make-$command"
   )
   [[ -s $TEST_ROOT/direct-$command ]] || fail "direct $command did not accept its positional argument"
@@ -96,19 +116,21 @@ for command in a c cm ac p l st s d lg af fuck bye df fc fm; do
   (
     cd "$REPOSITORY/nested"
     if [[ $command == cm || $command == fc || $command == fm || $command == fuck ]]; then
-      PATH="$TEST_BIN:$REPOSITORY/make:$PATH" DRY_RUN=1 "$REPOSITORY/make/$command" 'workflow query' > "$TEST_ROOT/direct-git-$command"
-      PATH="$TEST_BIN:$REPOSITORY/make:$PATH" DRY_RUN=1 git "$command" 'workflow query' > "$TEST_ROOT/git-$command"
+      PATH="$TEST_BIN:$REPOSITORY/make/workflow:$PATH" DRY_RUN=1 "$REPOSITORY/make/workflow/$command" 'workflow query' > "$TEST_ROOT/direct-git-$command"
+      PATH="$TEST_BIN:$REPOSITORY/make/workflow:$PATH" DRY_RUN=1 git "$command" 'workflow query' > "$TEST_ROOT/git-$command"
     else
-      PATH="$TEST_BIN:$REPOSITORY/make:$PATH" DRY_RUN=1 "$REPOSITORY/make/$command" > "$TEST_ROOT/direct-git-$command"
-      PATH="$TEST_BIN:$REPOSITORY/make:$PATH" DRY_RUN=1 git "$command" > "$TEST_ROOT/git-$command"
+      PATH="$TEST_BIN:$REPOSITORY/make/workflow:$PATH" DRY_RUN=1 "$REPOSITORY/make/workflow/$command" > "$TEST_ROOT/direct-git-$command"
+      PATH="$TEST_BIN:$REPOSITORY/make/workflow:$PATH" DRY_RUN=1 git "$command" > "$TEST_ROOT/git-$command"
     fi
   )
   sed -E \
-    -e 's/  [0-9][0-9]* [a-z]* ago/  <relative-time>/g' \
+    -e 's/\x1B\[[0-9;]*m//g' \
+    -e 's/[[:space:]]+[0-9]+ [[:alpha:]]+ ago[[:space:]]*$/  <relative-time>/' \
     -e 's/config: update [0-9-]+ [0-9:]+/config: update <timestamp>/g' \
     "$TEST_ROOT/direct-git-$command" > "$TEST_ROOT/direct-git-$command-normalized"
   sed -E \
-    -e 's/  [0-9][0-9]* [a-z]* ago/  <relative-time>/g' \
+    -e 's/\x1B\[[0-9;]*m//g' \
+    -e 's/[[:space:]]+[0-9]+ [[:alpha:]]+ ago[[:space:]]*$/  <relative-time>/' \
     -e 's/config: update [0-9-]+ [0-9:]+/config: update <timestamp>/g' \
     "$TEST_ROOT/git-$command" > "$TEST_ROOT/git-$command-normalized"
   cmp "$TEST_ROOT/direct-git-$command-normalized" "$TEST_ROOT/git-$command-normalized" || \

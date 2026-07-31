@@ -1,7 +1,7 @@
 # Use three equivalent workflow-command surfaces
 
 Each short Git workflow command will be implemented by a portable companion in
-`make/`, distributed beside `make/git.mk`, and copied by `git-setup config` to
+`make/workflow/`, distributed with `make/git.mk`, and copied by `git-setup config` to
 `~/.local/bin`. The same operation will be available as a direct command, a
 `git <alias>` shell alias, and a `make <alias>` compatibility target. Command
 output will teach all three forms in its Quick Actions, so Make remains usable

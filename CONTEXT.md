@@ -41,7 +41,7 @@ The executable copy of a portable workflow companion installed in the user's
 _Avoid_: Make alias, shell alias, Git subcommand
 
 **Portable workflow companion**:
-An executable in `make/` distributed with its Makefile fragment so repository
+An executable in `make/workflow/` distributed with its Makefile fragment so repository
 targets work without a prior git-setup installation.
 _Avoid_: Configuration template, private helper
 
