@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# fuck — amend the last commit. Usage: fuck ["message"] | git fuck ["message"] | make fuck ["message"].
+exec "$(dirname "$0")/.git-workflow" fuck "$@"

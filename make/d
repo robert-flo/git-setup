@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# d — inspect uncommitted changes. Usage: d | git d | make d.
+exec "$(dirname "$0")/.git-workflow" d "$@"

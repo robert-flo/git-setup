@@ -6,6 +6,10 @@
 # ──── Overview: 7 targets for the full git commit/push cycle ─
 #
 # 📎 Aliases & Targets:
+#    Each short alias is also a managed direct command and Git alias after
+#    git-setup config: `s`, `git s`, and `make s` share one workflow surface.
+#    Input is positional (`cm "message"`, `fc "query"`); MSG and CODE remain
+#    Make compatibility variables. Use DRY_RUN=1 to preview mutating commands.
 #    ALIAS          TARGET                   DESCRIPTION
 #    a  / git-a     git-add                  Stage all changes
 #    c  / git-c     git-commit               Quick timestamped commit
@@ -42,10 +46,19 @@ else
   EXEC =
 endif
 
-# Intercept positional arguments as the commit message for cm / git-cm targets
-ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),git-cm cm))
-  MSG ?= $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # Avoid erroring out on positional arguments treated as targets
+# Intercept positional workflow arguments so Make shares the direct and Git
+# command contract. MSG and CODE remain supported as compatibility variables.
+WORKFLOW_GOAL := $(firstword $(MAKECMDGOALS))
+WORKFLOW_ARGUMENT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ifneq ($(filter $(WORKFLOW_GOAL),git-cm cm git-amend fuck fc fm),)
+  ifneq ($(filter $(WORKFLOW_GOAL),fc),)
+    CODE ?= $(WORKFLOW_ARGUMENT)
+  else ifneq ($(filter $(WORKFLOW_GOAL),fm),)
+    MSG ?= $(WORKFLOW_ARGUMENT)
+  else
+    MSG ?= $(WORKFLOW_ARGUMENT)
+  endif
+  # Avoid erroring out on positional arguments treated as targets.
   %:
 	@:
 endif
@@ -55,6 +68,11 @@ GIT_REMOTE ?= origin
 BASE_BRANCH ?= master
 PROTECTED_BRANCHES ?= master dev rc imgbot
 GIT_PROTECTION_REQUIRED_APPROVALS ?= 0
+
+# Keep every workflow footer in the same three-column teaching layout.
+define WORKFLOW_QUICK_ACTION
+	@printf "  • %-20s $(BLUE)%-5s$(NC) · $(BLUE)%-10s$(NC) · $(BLUE)%s$(NC)\n" "$(1):" "$(2)" "git $(2)" "make $(2)"
+endef
 
 .PHONY: help-git git-add git-commit git-cm git-add-commit git-push git-pull git-status git-diff git-log git-setup git-sync git-diff-dev git-diff-rc git-diff-here \
         git-add-fuzzy git-amend git-clean git-prune-branches git-diff-fuzzy git-search git-protect-default-branch
@@ -149,9 +167,10 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • commit staged changes: $(BLUE)make git-commit$(NC)\n"
-	@printf "  • stage and commit in one step: $(BLUE)make git-add-commit$(NC)\n"
-	@printf "  • inspect what changed: $(BLUE)make git-diff$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,commit staged changes,c)
+	$(call WORKFLOW_QUICK_ACTION,stage and commit,ac)
+	$(call WORKFLOW_QUICK_ACTION,inspect changes,d)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -180,9 +199,10 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • push to remote: $(BLUE)make git-push$(NC)\n"
-	@printf "  • view recent history: $(BLUE)make git-log$(NC)\n"
-	@printf "  • check repo state:     $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,push to remote,p)
+	$(call WORKFLOW_QUICK_ACTION,view history,lg)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -215,9 +235,10 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • push to remote: $(BLUE)make git-push$(NC)\n"
-	@printf "  • view recent history: $(BLUE)make git-log$(NC)\n"
-	@printf "  • check repo state:     $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,push to remote,p)
+	$(call WORKFLOW_QUICK_ACTION,view history,lg)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -231,9 +252,10 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • push to remote: $(BLUE)make git-push$(NC)\n"
-	@printf "  • check repo state:     $(BLUE)make git-status$(NC)\n"
-	@printf "  • view recent history: $(BLUE)make git-log$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,push to remote,p)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	$(call WORKFLOW_QUICK_ACTION,view history,lg)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -267,8 +289,9 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • verify remote history: $(BLUE)make git-log$(NC)\n"
-	@printf "  • check repo state: $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,verify remote history,lg)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -291,8 +314,9 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • check repo state:     $(BLUE)make git-status$(NC)\n"
-	@printf "  • view history:         $(BLUE)make git-log$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	$(call WORKFLOW_QUICK_ACTION,view history,lg)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -359,9 +383,10 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • stage and commit: $(BLUE)make git-add-commit$(NC)\n"
-	@printf "  • push changes:     $(BLUE)make git-push$(NC)\n"
-	@printf "  • full history:     $(BLUE)make git-log$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,stage and commit,ac)
+	$(call WORKFLOW_QUICK_ACTION,push changes,p)
+	$(call WORKFLOW_QUICK_ACTION,full history,lg)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -394,7 +419,8 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • stage and commit: $(BLUE)make git-add-commit$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,stage and commit,ac)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -669,8 +695,9 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • commit staged changes:  $(BLUE)make git-commit$(NC)\n"
-	@printf "  • check repository state: $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,commit staged changes,c)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -692,8 +719,9 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • push changes to remote: $(BLUE)make git-push$(NC)\n"
-	@printf "  • check repository state: $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,push changes to remote,p)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -750,7 +778,7 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • review again: $(BLUE)make git-clean$(NC)\n\n"
+	@printf "  • %-20s $(BLUE)%-5s$(NC) · $(BLUE)%-10s$(NC) · $(BLUE)%s$(NC)\n\n" "review again:" "clean" "git bye" "make clean"
 endif
 
 git-prune-branches: git-clean
@@ -782,8 +810,9 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • check repository state: $(BLUE)make git-status$(NC)\n"
-	@printf "  • view recent history:    $(BLUE)make git-log$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	$(call WORKFLOW_QUICK_ACTION,view recent history,lg)
+	@printf "\n"
 endif
 
 # ═══════════════════════════════════════════════════════════════
@@ -811,6 +840,7 @@ ifndef EMBEDDED
 	@printf "\n$(GREEN)  ✓ done$(NC)\n"
 	@printf "\n$(YELLOW)📋 Quick Actions:$(NC)\n"
 	@printf "$(DIM)────────────────────────────────────────────────────────────────────────────────$(NC)\n"
-	@printf "  • view recent history:    $(BLUE)make git-log$(NC)\n"
-	@printf "  • check repository state: $(BLUE)make git-status$(NC)\n\n"
+	$(call WORKFLOW_QUICK_ACTION,view recent history,lg)
+	$(call WORKFLOW_QUICK_ACTION,check repo state,s)
+	@printf "\n"
 endif

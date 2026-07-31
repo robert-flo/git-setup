@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# ac — stage and create a timestamped commit. Usage: ac | git ac | make ac.
+exec "$(dirname "$0")/.git-workflow" ac "$@"

@@ -36,41 +36,50 @@ help-aliases: ## Show Git compatibility aliases
 	@printf "%-20s %-25s %s\n" "dc" "docker-clean" "Remove the local Docker image"
 	@printf "\n"
 
+# === Portable Git workflow adapters ===
+# Keep this Make fragment portable: each target resolves its executable beside
+# this file instead of requiring a prior git-setup installation.
+GIT_WORKFLOW_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+workflow_quote = '$(subst ','"'"'",$(1))'
+define run_workflow
+	@WORKFLOW_ARGUMENT=$(call workflow_quote,$(2)) "$(GIT_WORKFLOW_DIR)$(1)"
+endef
+
 # === Git Operations (git-) ===
-git-a: git-add
-git-c: git-commit
-git-ac: git-add-commit
-git-p: git-push
-git-st: git-status
-git-s: git-status
-git-d: git-diff
-git-l: git-pull
-git-lg: git-log
-git-af: git-add-fuzzy
-git-fuck: git-amend
-git-bye: git-clean
-git-df: git-diff-fuzzy
-git-fc: git-search
-git-fm: git-search
+git-a: ; $(call run_workflow,a)
+git-c: ; $(call run_workflow,c)
+git-ac: ; $(call run_workflow,ac)
+git-p: ; $(call run_workflow,p)
+git-l: ; $(call run_workflow,l)
+git-st: ; $(call run_workflow,st)
+git-s: ; $(call run_workflow,s)
+git-d: ; $(call run_workflow,d)
+git-lg: ; $(call run_workflow,lg)
+git-af: ; $(call run_workflow,af)
+git-fuck: ; $(call run_workflow,fuck,$(MSG))
+git-bye: ; $(call run_workflow,bye)
+git-df: ; $(call run_workflow,df)
+git-fc: ; $(call run_workflow,fc,$(CODE))
+git-fm: ; $(call run_workflow,fm,$(MSG))
 
 # === Short Git Aliases ===
-a: git-add
-c: git-commit
-cm: git-cm
-ac: git-add-commit
-p: git-push
-l: git-pull
-st: git-status
-s: git-status
-d: git-diff
-lg: git-log
-af: git-add-fuzzy
-fuck: git-amend
-bye: git-clean
-clean: git-clean
-df: git-diff-fuzzy
-fc: git-search
-fm: git-search
+a: ; $(call run_workflow,a)
+c: ; $(call run_workflow,c)
+cm: ; $(call run_workflow,cm,$(MSG))
+ac: ; $(call run_workflow,ac)
+p: ; $(call run_workflow,p)
+l: ; $(call run_workflow,l)
+st: ; $(call run_workflow,st)
+s: ; $(call run_workflow,s)
+d: ; $(call run_workflow,d)
+lg: ; $(call run_workflow,lg)
+af: ; $(call run_workflow,af)
+fuck: ; $(call run_workflow,fuck,$(MSG))
+bye: ; $(call run_workflow,bye)
+clean: ; $(call run_workflow,clean)
+df: ; $(call run_workflow,df)
+fc: ; $(call run_workflow,fc,$(CODE))
+fm: ; $(call run_workflow,fm,$(MSG))
 
 # Short Docker aliases
 db: docker-build

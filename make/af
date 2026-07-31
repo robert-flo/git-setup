@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# af — interactively stage files. Usage: af | git af | make af.
+exec "$(dirname "$0")/.git-workflow" af "$@"

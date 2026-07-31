@@ -34,6 +34,11 @@ do_clean() {
   echo -e "      • ~/.config/git/shell_aliases"
   echo -e "      ${GRAY}(gitconfig.local will be preserved)${NC}"
   echo ""
+  echo -e "    ${GRAY}Managed Workflow Commands:${NC}"
+  echo -e "      • ~/.local/bin/{a,c,cm,ac,p,l,st,s,d,lg,af,fuck,bye,clean,df,fc,fm}"
+  echo -e "      • ~/.local/bin/.git-workflow"
+  echo -e "      ${GRAY}(unrelated ~/.local/bin files will be preserved)${NC}"
+  echo ""
   echo -e "    ${GRAY}GitHub CLI:${NC}"
   echo -e "      • gh authentication token"
   echo ""
@@ -105,6 +110,22 @@ do_clean() {
     print_info "No generated Git configuration files found"
   else
     print_info "Preserved ${GRAY}~/.config/git/gitconfig.local${NC}"
+  fi
+
+  print_section "${ICON_GIT} Cleaning Managed Workflow Commands"
+  local workflow_command=""
+  local removed_workflow_commands=0
+  for workflow_command in \
+    .git-workflow \
+    a c cm ac p l st s d lg af fuck bye clean df fc fm; do
+    if [[ -f $WORKFLOW_COMMAND_DIR/$workflow_command ]]; then
+      rm -f "$WORKFLOW_COMMAND_DIR/$workflow_command"
+      print_success "Removed ${GRAY}${WORKFLOW_COMMAND_DIR/#$HOME/\~}/$workflow_command${NC}"
+      ((removed_workflow_commands += 1))
+    fi
+  done
+  if ((removed_workflow_commands == 0)); then
+    print_info "No managed workflow commands found"
   fi
 
   print_section "󰃢 Cleaning GitHub CLI"

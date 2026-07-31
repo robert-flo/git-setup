@@ -81,6 +81,9 @@ show_help() {
       config, delta.gitconfig, gitattributes.global, gitconfig_aliases,
       gitignore.global, and shell_aliases.
 
+    config also refreshes the managed Git workflow commands in ~/.local/bin.
+    Use each operation directly, as git <alias>, or as make <alias>.
+
     ~/.config/git/gitconfig.local is personal. It is loaded last and is never
     generated, updated, or removed by git-setup.
 

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# fm — search commits by message. Usage: fm "query" | git fm "query" | make fm "query".
+exec "$(dirname "$0")/.git-workflow" fm "$@"

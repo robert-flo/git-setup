@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# a — stage all changes. Usage: a | git a | make a.
+exec "$(dirname "$0")/.git-workflow" a "$@"

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# df — interactively inspect a historical diff. Usage: df | git df | make df.
+exec "$(dirname "$0")/.git-workflow" df "$@"

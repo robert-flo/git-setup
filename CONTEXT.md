@@ -34,3 +34,44 @@ _Avoid_: Helper, launcher
 The GitHub source tarball for a version tag that the Arch package verifies and
 installs.
 _Avoid_: Development checkout, live master branch
+
+**Managed workflow command**:
+The executable copy of a portable workflow companion installed in the user's
+`~/.local/bin` directory.
+_Avoid_: Make alias, shell alias, Git subcommand
+
+**Portable workflow companion**:
+An executable in `make/` distributed with its Makefile fragment so repository
+targets work without a prior git-setup installation.
+_Avoid_: Configuration template, private helper
+
+**Workflow surface**:
+One of the equivalent ways to invoke a managed workflow command: directly from
+`~/.local/bin`, through `git <alias>`, or through `make <alias>`.
+_Avoid_: Different command, alternative implementation
+
+**Unified argument contract**:
+The positional-argument syntax shared by every workflow surface. The Make
+variables `MSG` and `CODE` remain compatibility inputs where they already exist.
+_Avoid_: Make-only parameter syntax, Git-only parameter syntax
+
+**Workflow dry run**:
+The `DRY_RUN=1` environment contract that previews a mutating workflow command
+without changing the repository, on every workflow surface.
+_Avoid_: Make-only dry run, simulation flag
+
+**Managed workflow set**:
+The 17 Git workflow commands installed and removed as one owned set by
+`git-setup`; Docker aliases are not members of this set.
+_Avoid_: `~/.local/bin` directory, all Make aliases
+
+**Output parity**:
+The requirement that a workflow companion preserves its corresponding
+`make/git.mk` output exactly, except for documented intentional differences.
+_Avoid_: Visual redesign, approximate compatibility
+
+**Native Git command exception**:
+An operation whose Git spelling is already a built-in subcommand and therefore
+cannot be replaced by a Git alias. `clean` uses direct and Make surfaces while
+`git bye` is its managed Git surface.
+_Avoid_: Overridable Git alias, managed `git clean`

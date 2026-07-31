@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# s — repository overview. Usage: s | git s | make s.
+exec "$(dirname "$0")/.git-workflow" s "$@"
