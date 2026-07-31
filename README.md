@@ -182,6 +182,11 @@ where they did before. Preview a mutating operation on any surface with
 `DRY_RUN=1`, for example `DRY_RUN=1 ac`, `DRY_RUN=1 git ac`, or
 `DRY_RUN=1 make ac`.
 
+Every managed command verifies its Git repository context before validating
+arguments or running an operation. Outside a repository, `s` and `st` retain
+their repository overview with the `not a git repository` notice; every other
+managed command shows the same notice and exits without performing work.
+
 Running `git-setup config` refreshes these owned command files. Running
 `git-setup clean` removes only them and its private runtime after confirmation;
 it never removes `~/.local/bin` or unrelated commands. A personal or

@@ -10,6 +10,8 @@
 #    git-setup config: `s`, `git s`, and `make s` share one workflow surface.
 #    Input is positional (`cm "message"`, `fc "query"`); MSG and CODE remain
 #    Make compatibility variables. Use DRY_RUN=1 to preview mutating commands.
+#    Managed short commands verify Git repository context before validating
+#    input or running work; `s` and `st` report the missing context in place.
 #    ALIAS          TARGET                   DESCRIPTION
 #    a  / git-a     git-add                  Stage all changes
 #    c  / git-c     git-commit               Quick timestamped commit

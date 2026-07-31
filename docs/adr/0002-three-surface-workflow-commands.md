@@ -17,6 +17,11 @@ Mutating commands will also preserve `DRY_RUN=1` as a shared environment
 contract, allowing the same preview syntax before direct, Git-alias, and Make
 invocations.
 
+Each managed command establishes Git repository context before validating its
+arguments or invoking an operation. `s` and `st` retain their informational
+repository overview outside a repository; the other commands report the same
+condition and exit without doing work.
+
 `git-setup config` owns installation of the 17-command Git workflow set and
 refreshes each executable. `git-setup clean` removes only those owned files
 after confirmation; it never removes `~/.local/bin`, unrelated user commands,

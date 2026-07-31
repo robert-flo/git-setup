@@ -191,6 +191,21 @@ require_output "$TEST_ROOT/installed-git-s-plain-output" "path:      $WORKFLOW_R
 require_output "$TEST_ROOT/installed-git-s-output" 'git ac'
 require_output "$TEST_ROOT/installed-git-s-output" 'make ac'
 
+# Installed workflow commands reject an invocation outside a repository before
+# validating their operation-specific arguments.  This keeps `cm` consistent
+# with the repository-context diagnostic already shown by `s`.
+outside_cm_status=0
+(
+  cd "$TEST_ROOT"
+  HOME="$DEFAULT_HOME" XDG_CONFIG_HOME="$DEFAULT_HOME/.config" \
+    PATH="$DEFAULT_HOME/.local/bin:$TEST_BIN:$PATH" cm
+) > "$TEST_ROOT/installed-cm-outside-output" 2>&1 || outside_cm_status=$?
+((outside_cm_status != 0)) || fail 'installed cm succeeded outside a Git repository'
+require_output "$TEST_ROOT/installed-cm-outside-output" 'not a git repository'
+if grep -Fq 'please specify a commit message' "$TEST_ROOT/installed-cm-outside-output"; then
+  fail 'installed cm validated its message before its Git repository context'
+fi
+
 # A subsequent run refreshes managed files but preserves the local override.
 printf '[user]\n\tname = Local Override\n' > "$DEFAULT_HOME/.config/git/gitconfig.local"
 run_setup "$DEFAULT_HOME" config > "$TEST_ROOT/updated-config-output"

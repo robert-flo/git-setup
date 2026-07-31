@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- fix: require repository context for workflow commands ([#32](https://github.com/robert-flo/git-setup/pull/32)). <!-- changelog-pr:32 -->
+
+
 ## [0.2.0] - 2026-07-31
 
 ### Added
