@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- feat: add three-surface Git workflow commands ([#28](https://github.com/robert-flo/git-setup/pull/28)). <!-- changelog-pr:28 -->
+
 - feat: protect default branch through make ([#23](https://github.com/robert-flo/git-setup/pull/23)). <!-- changelog-pr:23 -->
 
 
