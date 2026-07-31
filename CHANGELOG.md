@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## [0.2.0] - 2026-07-31
+
 ### Added
 
 - feat: add three-surface Git workflow commands ([#28](https://github.com/robert-flo/git-setup/pull/28)). <!-- changelog-pr:28 -->
