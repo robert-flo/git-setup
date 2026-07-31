@@ -13,6 +13,12 @@ PROTECTED_BRANCHES=${PROTECTED_BRANCHES:-'master dev rc imgbot'}
 
 print_header() { printf '\n%s%s%s\n%s%s%s\n' "$CYAN" "$1" "$NC" "$CYAN" "$RULE" "$NC"; }
 print_done() { printf '\n%s  ✓ done%s\n' "$GREEN" "$NC"; }
+is_git_repository() { git rev-parse --git-dir >/dev/null 2>&1; }
+not_a_git_repository() { printf '%s  ⚠  not a git repository%s\n' "$YELLOW" "$NC"; }
+# Every mutating or repository-reading workflow command establishes its Git
+# context before validating arguments or invoking Git. `s` and `st` retain
+# their fuller repository overview, including this same diagnostic.
+require_git_repository() { is_git_repository || { not_a_git_repository; return 1; }; }
 quick_actions() {
   printf '\n%s📋 Quick Actions:%s\n%s%s%s\n' "$YELLOW" "$NC" "$DIM" "$RULE" "$NC"
   while (( $# )); do
@@ -27,7 +33,7 @@ remote_name() { git remote get-url "$GIT_REMOTE" 2>/dev/null | sed -E 's|.*githu
 
 status() {
   print_header '📊 git-status · repository overview'
-  if git rev-parse --git-dir >/dev/null 2>&1; then
+  if is_git_repository; then
     local remote repo branch ahead behind staged unstaged untracked git_dir common_dir worktree
     remote=$(git remote get-url "$GIT_REMOTE" 2>/dev/null || true); repo=$(printf '%s' "$remote" | sed -E 's|.*github.com[:/]([^/]+/[^/]+)(\.git)?$|\1|' | sed 's|\.git$||')
     branch=$(git branch --show-current); ahead=$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0); behind=$(git rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)
@@ -42,7 +48,7 @@ status() {
       if (( untracked > 0 )); then printf '  %suntracked:%s %s file(s)\n' "$DIM" "$NC" "$untracked"; git ls-files --others --exclude-standard | while IFS= read -r f; do printf '    %s?%s %s\n' "$DIM" "$NC" "$f"; done; printf '\n'; fi
     fi
     printf '  %srecent commits:%s\n' "$DIM" "$NC"; git --no-pager log --max-count=5 --pretty=format:"  %C(green)%h%C(reset)  %<(50,trunc)%s  %C(dim)%<(15)%ar%C(reset)"; printf '\n'
-  else printf '%s  ⚠  not a git repository%s\n' "$YELLOW" "$NC"; fi
+  else not_a_git_repository; fi
   print_done; quick_actions 'stage and commit' ac 'push changes' p 'full history' lg
 }
 
@@ -114,9 +120,13 @@ search_history() {
 
 operation=${1:-}; shift || true
 case $operation in
+  s|st) ;;
+  a|c|cm|ac|p|l|d|lg|af|fuck|bye|clean|df|fc|fm) require_git_repository || exit 1 ;;
+  *) printf 'usage: %s {a|c|cm|ac|p|l|st|s|d|lg|af|fuck|bye|clean|df|fc|fm}\n' "${0##*/}" >&2; exit 64 ;;
+esac
+case $operation in
   s|st) status ;; a) add_all ;; c) commit_auto ;; cm) commit_message "$*" ;; ac) add_commit ;;
   p) push_changes ;; l) pull_changes ;; d) show_diff ;; lg) show_log ;; af) add_fuzzy ;;
   fuck) amend "$*" ;; clean|bye) clean_worktrees ;; df) diff_fuzzy ;;
   fc|fm) search_history "$operation" "${*:-${WORKFLOW_ARGUMENT:-${CODE:-${MSG:-}}}}" ;;
-  *) printf 'usage: %s {a|c|cm|ac|p|l|st|s|d|lg|af|fuck|bye|clean|df|fc|fm}\n' "${0##*/}" >&2; exit 64 ;;
 esac

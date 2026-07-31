@@ -109,6 +109,34 @@ for command in cm fc fm; do
   [[ -s $TEST_ROOT/make-$command ]] || fail "make $command did not accept its positional argument"
 done
 
+# Every managed adapter checks repository context before it validates inputs or
+# invokes an operation. `s` and `st` remain informational reports; every other
+# command fails before it can perform work or emit an argument diagnostic.
+OUTSIDE_REPOSITORY="$TEST_ROOT/outside-repository"
+mkdir -p "$OUTSIDE_REPOSITORY"
+for command in a c cm ac p l st s d lg af fuck bye clean df fc fm; do
+  outside_status=0
+  (
+    cd "$OUTSIDE_REPOSITORY"
+    PATH="$TEST_BIN:$PATH" DRY_RUN=1 "$REPOSITORY/make/workflow/$command"
+  ) > "$TEST_ROOT/outside-$command" 2>&1 || outside_status=$?
+  grep -Fq 'not a git repository' "$TEST_ROOT/outside-$command" || \
+    fail "direct $command did not explain that Git context is required"
+  if [[ $command == s || $command == st ]]; then
+    ((outside_status == 0)) || fail "direct $command failed while reporting a missing Git repository"
+  else
+    ((outside_status != 0)) || fail "direct $command succeeded outside a Git repository"
+  fi
+done
+if grep -Fq 'please specify a commit message' "$TEST_ROOT/outside-cm"; then
+  fail 'direct cm validated its message before its Git repository context'
+fi
+for command in fc fm; do
+  if grep -Fq 'please specify a query' "$TEST_ROOT/outside-$command"; then
+    fail "direct $command validated its query before its Git repository context"
+  fi
+done
+
 # The generated Git shell aliases preserve output parity with their direct
 # surface. The native `git clean` exception is represented by `git bye`.
 for command in a c cm ac p l st s d lg af fuck bye df fc fm; do
