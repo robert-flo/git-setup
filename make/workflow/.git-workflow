@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# Managed workflow runtime.  Public commands are the adapters beside this file.
+# Usage is documented in README.md and make/git.mk.
+
+set -uo pipefail
+
+RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'
+BLUE=$'\033[0;34m'; CYAN=$'\033[0;36m'; DIM=$'\033[2m'; NC=$'\033[0m'
+RULE='────────────────────────────────────────────────────────────────────────────────'
+GIT_REMOTE=${GIT_REMOTE:-origin}
+BASE_BRANCH=${BASE_BRANCH:-master}
+PROTECTED_BRANCHES=${PROTECTED_BRANCHES:-'master dev rc imgbot'}
+
+print_header() { printf '\n%s%s%s\n%s%s%s\n' "$CYAN" "$1" "$NC" "$CYAN" "$RULE" "$NC"; }
+print_done() { printf '\n%s  ✓ done%s\n' "$GREEN" "$NC"; }
+quick_actions() {
+  printf '\n%s📋 Quick Actions:%s\n%s%s%s\n' "$YELLOW" "$NC" "$DIM" "$RULE" "$NC"
+  while (( $# )); do
+    printf '  • %-20s %s%-5s%s · %s%-10s%s · %s%s%s\n' "$1:" "$BLUE" "$2" "$NC" "$BLUE" "git $2" "$NC" "$BLUE" "make $2" "$NC"
+    shift 2
+  done
+  printf '\n'
+}
+dry_run() { [[ ${DRY_RUN:-0} == 1 ]]; }
+run_mutation() { if dry_run; then printf '  ▶ [dry-run]'; printf ' %q' "$@"; printf '\n'; else "$@"; fi; }
+remote_name() { git remote get-url "$GIT_REMOTE" 2>/dev/null | sed -E 's|.*github.com[:/]([^/]+/[^/]+)(\.git)?$|\1|' | sed 's|\.git$||'; }
+
+status() {
+  print_header '📊 git-status · repository overview'
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    local remote repo branch ahead behind staged unstaged untracked git_dir common_dir worktree
+    remote=$(git remote get-url "$GIT_REMOTE" 2>/dev/null || true); repo=$(printf '%s' "$remote" | sed -E 's|.*github.com[:/]([^/]+/[^/]+)(\.git)?$|\1|' | sed 's|\.git$||')
+    branch=$(git branch --show-current); ahead=$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0); behind=$(git rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)
+    staged=$(git diff --cached --name-only | wc -l | tr -d ' '); unstaged=$(git diff --name-only | wc -l | tr -d ' '); untracked=$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')
+    git_dir=$(realpath "$(git rev-parse --git-dir)"); common_dir=$(realpath "$(git rev-parse --git-common-dir)"); [[ $git_dir != "$common_dir" ]] && worktree=yes || worktree=no
+    printf '  %srepo:%s      %s\n  %sbranch:%s    %s' "$DIM" "$NC" "$repo" "$DIM" "$NC" "$branch"
+    if (( ahead > 0 && behind > 0 )); then printf '  %s⇕ ↑%s ↓%s%s' "$YELLOW" "$ahead" "$behind" "$NC"; elif (( ahead > 0 )); then printf '  %s↑ %s ahead%s' "$YELLOW" "$ahead" "$NC"; elif (( behind > 0 )); then printf '  %s↓ %s behind%s' "$RED" "$behind" "$NC"; fi
+    printf '\n  %spath:%s      %s\n  %sworktree:%s  %s\n\n' "$DIM" "$NC" "$PWD" "$DIM" "$NC" "$worktree"
+    if (( staged == 0 && unstaged == 0 && untracked == 0 )); then printf '  %s✓ nothing to commit — working tree clean%s\n\n' "$GREEN" "$NC"; else
+      if (( staged > 0 )); then printf '  %sstaged:%s    %s file(s)\n' "$GREEN" "$NC" "$staged"; git diff --cached --name-only | while IFS= read -r f; do printf '    %s+%s %s\n' "$GREEN" "$NC" "$f"; done; printf '\n'; fi
+      if (( unstaged > 0 )); then printf '  %smodified:%s  %s file(s)\n' "$YELLOW" "$NC" "$unstaged"; git diff --name-only | while IFS= read -r f; do printf '    %s~%s %s\n' "$YELLOW" "$NC" "$f"; done; printf '\n'; fi
+      if (( untracked > 0 )); then printf '  %suntracked:%s %s file(s)\n' "$DIM" "$NC" "$untracked"; git ls-files --others --exclude-standard | while IFS= read -r f; do printf '    %s?%s %s\n' "$DIM" "$NC" "$f"; done; printf '\n'; fi
+    fi
+    printf '  %srecent commits:%s\n' "$DIM" "$NC"; git --no-pager log --max-count=5 --pretty=format:"  %C(green)%h%C(reset)  %<(50,trunc)%s  %C(dim)%<(15)%ar%C(reset)"; printf '\n'
+  else printf '%s  ⚠  not a git repository%s\n' "$YELLOW" "$NC"; fi
+  print_done; quick_actions 'stage and commit' ac 'push changes' p 'full history' lg
+}
+
+add_all() {
+  print_header '💾 git-add · staging all changes'; local changed; changed=$(git status --short | wc -l)
+  if (( changed > 0 )); then printf '  adding %s file(s) to staging area...\n' "$changed"; run_mutation git add .; printf '%s  ✓ staged %s file(s)%s\n\n' "$GREEN" "$changed" "$NC"; git status --short | sed 's/^/  /'; else printf '%s  ✓  nothing to stage — working tree is clean%s\n' "$GREEN" "$NC"; fi
+  print_done; quick_actions 'commit staged changes' c 'stage and commit' ac 'inspect what changed' d
+}
+
+commit_auto() {
+  print_header '📝 git-commit · timestamped snapshot'
+  if [[ -n $(git status --porcelain) ]]; then local message hash branch; printf '  staging changes...\n'; run_mutation git add .; message="config: update $(date '+%Y-%m-%d %H:%M:%S')"; printf '  commit: %s%s%s\n\n' "$GREEN" "$message" "$NC"; run_mutation git commit --signoff -m "$message" || return; hash=$(git rev-parse --short HEAD); branch=$(git branch --show-current); printf '%s  ✓ %s%s%s  %s\n' "$GREEN" "$DIM" "$hash" "$NC" "$branch"; else printf '%s  ✓  nothing to commit — working tree is clean%s\n' "$GREEN" "$NC"; fi
+  print_done; quick_actions 'push to remote' p 'view recent history' lg 'check repo state' s
+}
+
+commit_message() {
+  local message=${1:-${WORKFLOW_ARGUMENT:-${MSG:-}}}; print_header '📝 git-cm · custom commit'
+  if [[ -z $message ]]; then printf '%s  ✗ please specify a commit message%s\n  example: %scm "your commit message"%s\n\n' "$RED" "$NC" "$BLUE" "$NC"; return 1; fi
+  if [[ -n $(git status --porcelain) ]]; then local hash branch; printf '  staging changes...\n'; run_mutation git add .; printf '  commit: %s%s%s\n\n' "$GREEN" "$message" "$NC"; run_mutation git commit --signoff -m "$message" || return; hash=$(git rev-parse --short HEAD); branch=$(git branch --show-current); printf '%s  ✓ %s%s%s  %s\n' "$GREEN" "$DIM" "$hash" "$NC" "$branch"; else printf '%s  ✓  nothing to commit — working tree is clean%s\n' "$GREEN" "$NC"; fi
+  print_done; quick_actions 'push to remote' p 'view recent history' lg 'check repo state' s
+}
+
+add_commit() { add_all_embedded || return; commit_auto_embedded || return; print_done; quick_actions 'push to remote' p 'check repo state' s 'view recent history' lg; }
+add_all_embedded() { local changed; changed=$(git status --short | wc -l); if (( changed > 0 )); then printf '  adding %s file(s) to staging area...\n' "$changed"; run_mutation git add . || return; printf '%s  ✓ staged %s file(s)%s\n\n' "$GREEN" "$changed" "$NC"; git status --short | sed 's/^/  /'; else printf '%s  ✓  nothing to stage — working tree is clean%s\n' "$GREEN" "$NC"; fi; }
+commit_auto_embedded() { if [[ -n $(git status --porcelain) ]]; then local message hash branch; printf '  staging changes...\n'; run_mutation git add . || return; message="config: update $(date '+%Y-%m-%d %H:%M:%S')"; printf '  commit: %s%s%s\n\n' "$GREEN" "$message" "$NC"; run_mutation git commit --signoff -m "$message" || return; hash=$(git rev-parse --short HEAD); branch=$(git branch --show-current); printf '%s  ✓ %s%s%s  %s\n' "$GREEN" "$DIM" "$hash" "$NC" "$branch"; else printf '%s  ✓  nothing to commit — working tree is clean%s\n' "$GREEN" "$NC"; fi; }
+
+push_changes() { local branch remote unpushed; print_header '☁️  git-push · sync to remote'; branch=$(git branch --show-current); remote=$(remote_name); printf '  %sbranch:%s %s  %sremote:%s %s\n' "$DIM" "$NC" "$branch" "$DIM" "$NC" "$remote"; if git rev-parse --verify --quiet "refs/remotes/$GIT_REMOTE/$branch" >/dev/null 2>&1; then unpushed=$(git log "$GIT_REMOTE/$branch..HEAD" --oneline | wc -l); if (( unpushed > 0 )); then printf '\n  pushing %s commit(s)...\n' "$unpushed"; run_mutation git push || return; printf '%s  ✓ pushed to remote%s\n' "$GREEN" "$NC"; else printf '%s  ✓  everything up-to-date%s\n' "$GREEN" "$NC"; fi; else printf '\n  pushing new branch %s to remote...\n' "$branch"; run_mutation git push --set-upstream "$GIT_REMOTE" "$branch" || return; printf '%s  ✓ pushed to remote%s\n' "$GREEN" "$NC"; fi; print_done; quick_actions 'verify remote history' lg 'check repo state' s; }
+pull_changes() { local branch remote; print_header '☁️  git-pull · pull from remote'; branch=$(git branch --show-current); remote=$(remote_name); printf '  %sbranch:%s %s  %sremote:%s %s\n\n  pulling changes from remote...\n\n' "$DIM" "$NC" "$branch" "$DIM" "$NC" "$remote"; run_mutation git pull "$GIT_REMOTE" "$branch" || return; dry_run || printf '\n%s  ✓ pulled from remote%s\n' "$GREEN" "$NC"; print_done; quick_actions 'check repo state' s 'view history' lg; }
+
+show_diff() {
+  print_header '🔄 git-diff · repository changes'
+  if git diff --quiet 2>/dev/null; then
+    printf '%s  ✓ no uncommitted changes in repository%s\n' "$GREEN" "$NC"
+  else
+    if command -v hunk >/dev/null 2>&1; then hunk diff; else git diff --color=always 2>/dev/null || git diff; fi
+    printf '\n'
+    local files add del
+    files=$(git diff --name-only | wc -l); add=$(git diff --numstat | awk '{sum+=$1} END {print sum+0}'); del=$(git diff --numstat | awk '{sum+=$2} END {print sum+0}')
+    printf '  %sfiles:%s %s  %s+%s%s  %s-%s%s\n\n' "$DIM" "$NC" "$files" "$GREEN" "$add" "$NC" "$RED" "$del" "$NC"
+    git --no-pager diff --stat --color=always 2>/dev/null || git --no-pager diff --stat
+    printf '\n'
+  fi
+  print_done; quick_actions 'stage and commit' ac
+}
+show_log() { print_header '📜 git-log · recent history'; if git rev-parse --git-dir >/dev/null 2>&1; then git --no-pager log --max-count=15 --pretty=format:"  %C(green)%h%C(reset)  %<(58,trunc)%s  %C(dim)%<(15)%ar%C(reset)"; else printf '%s  ⚠  not a git repository%s' "$YELLOW" "$NC"; fi; printf '\n'; }
+
+add_fuzzy() { print_header '💾 git-add-fuzzy · interactive staging'; if command -v fzf >/dev/null 2>&1; then local files; files=$(git ls-files -m -o --exclude-standard | fzf -m --header='Select files to stage (TAB to multi-select, ENTER to accept)'); if [[ -n $files ]]; then if dry_run; then printf '  ▶ [dry-run] selected file(s) would be staged\n'; else while IFS= read -r file; do [[ -n $file ]] && git add "$file"; done <<< "$files"; fi; printf '%s  ✓ staged selected file(s)%s\n' "$GREEN" "$NC"; else printf '%s  ⚠  no files selected%s\n' "$YELLOW" "$NC"; fi; else printf '%s  ✗ fzf is not installed%s\n' "$RED" "$NC"; fi; print_done; quick_actions 'commit staged changes' c 'check repository state' s; }
+amend() { local message=${1:-${WORKFLOW_ARGUMENT:-${MSG:-}}}; print_header '📝 git-amend · modify last commit'; if [[ -n $message ]]; then run_mutation git commit --signoff --amend -m "$message"; else run_mutation git commit --signoff --amend --no-edit; fi; print_done; quick_actions 'push changes to remote' p 'check repository state' s; }
+
+clean_worktrees() { print_header '🧹 git-clean · merged worktrees and branches'; local base tmp count active; base=$(git rev-parse --verify "$BASE_BRANCH" 2>/dev/null) || { printf '%s  ✗ base branch not found: %s%s\n' "$RED" "$BASE_BRANCH" "$NC"; return 1; }; tmp=$(mktemp); trap 'rm -f "$tmp"' RETURN; printf '  %sbase branch:%s %s\n\n%s[1] Merged worktrees%s\n' "$DIM" "$NC" "$BASE_BRANCH" "$YELLOW" "$NC"; while IFS=$'\t' read -r branch path; do [[ -z $branch ]] && continue; printf '%s\n' "$PROTECTED_BRANCHES" | grep -Fxq "$branch" && continue; if git merge-base --is-ancestor "refs/heads/$branch" "$base"; then if [[ -n $(git -C "$path" status --porcelain 2>/dev/null) ]]; then printf '  %s⚠ %s%s  %s  %s(modified; skipped)%s\n' "$RED" "$branch" "$NC" "$path" "$YELLOW" "$NC"; else printf '  %s✓ %s%s  %s  %s(clean; candidate)%s\n' "$GREEN" "$branch" "$NC" "$path" "$DIM" "$NC"; printf 'worktree\t%s\t%s\n' "$branch" "$path" >> "$tmp"; fi; fi; done < <(git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch refs\/heads\//{branch=$2; sub("refs/heads/", "", branch); print branch "\t" path}')
+  printf '\n%s[2] Merged branches without worktrees%s\n' "$YELLOW" "$NC"; active=$(git worktree list --porcelain | sed -n 's|^branch refs/heads/||p'); while IFS= read -r branch; do [[ -z $branch ]] && continue; if printf '%s\n' "$PROTECTED_BRANCHES" | grep -Fxq "$branch" || printf '%s\n' "$active" | grep -Fxq "$branch"; then continue; fi; printf '  %s✓ %s%s  %s(branch only; candidate)%s\n' "$GREEN" "$branch" "$NC" "$DIM" "$NC"; printf 'branch\t%s\n' "$branch" >> "$tmp"; done < <(git for-each-ref --merged "$base" --format='%(refname:short)' refs/heads)
+  printf '\n%s[3] Protected branches%s\n  %s%s%s\n' "$YELLOW" "$NC" "$DIM" "$PROTECTED_BRANCHES" "$NC"; count=$(wc -l < "$tmp" | tr -d ' '); if (( count == 0 )); then printf '\n%s  ✓ no safe cleanup candidates%s\n' "$GREEN" "$NC"; elif dry_run; then printf '\n  ▶ [dry-run] %s candidate(s) reported; no changes made\n' "$count"; else printf '\n  Remove %s clean merged candidate(s)? [y/N] ' "$count"; local answer; read -r answer; case $answer in y|Y|yes|YES) while IFS=$'\t' read -r kind branch path; do if [[ $kind == worktree ]]; then git worktree remove "$path" && git branch -d "$branch"; else git branch -d "$branch"; fi; done < "$tmp"; printf '%s  ✓ cleanup completed%s\n' "$GREEN" "$NC";; *) printf '  cleanup cancelled; no changes made\n';; esac; fi; print_done; quick_actions 'review again' clean; }
+
+diff_fuzzy() { print_header '🔍 git-diff-fuzzy · select commit to view diff'; local commit=''; if command -v fzf >/dev/null 2>&1; then commit=$(git log --oneline --color=always | fzf --ansi --no-multi --header='Select commit to diff' | awk '{print $1}'); elif command -v peco >/dev/null 2>&1; then commit=$(git log --oneline | peco | awk '{print $1}'); else printf '%s  ✗ neither fzf nor peco is installed%s\n' "$RED" "$NC"; fi; [[ -n $commit ]] && git diff "$commit^" "$commit"; print_done; quick_actions 'check repository state' s 'view recent history' lg; }
+search_history() {
+  local mode=$1 query=${2:-}
+  print_header '🔍 git-search · search commit history'
+  if [[ -z $query ]]; then
+    printf '%s  ✗ please specify a query%s\n  example: %s%s "query"%s\n' "$RED" "$NC" "$BLUE" "$mode" "$NC"
+  elif [[ $mode == fc ]]; then
+    git log --pretty=format:"  %C(green)%h%C(reset)  %<(50,trunc)%s  %C(dim)%<(15)%ar%C(reset)" -S"$query"
+    printf '\n'
+  else
+    git log --pretty=format:"  %C(green)%h%C(reset)  %<(50,trunc)%s  %C(dim)%<(15)%ar%C(reset)" --grep="$query"
+    printf '\n'
+  fi
+  print_done; quick_actions 'view recent history' lg 'check repository state' s
+}
+
+operation=${1:-}; shift || true
+case $operation in
+  s|st) status ;; a) add_all ;; c) commit_auto ;; cm) commit_message "$*" ;; ac) add_commit ;;
+  p) push_changes ;; l) pull_changes ;; d) show_diff ;; lg) show_log ;; af) add_fuzzy ;;
+  fuck) amend "$*" ;; clean|bye) clean_worktrees ;; df) diff_fuzzy ;;
+  fc|fm) search_history "$operation" "${*:-${WORKFLOW_ARGUMENT:-${CODE:-${MSG:-}}}}" ;;
+  *) printf 'usage: %s {a|c|cm|ac|p|l|st|s|d|lg|af|fuck|bye|clean|df|fc|fm}\n' "${0##*/}" >&2; exit 64 ;;
+esac

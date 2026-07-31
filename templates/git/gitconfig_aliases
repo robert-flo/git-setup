@@ -1,32 +1,34 @@
 [alias]
     # ─── Basic Operations ─────────────────────────────────────────────────────
-    a  = add
+    a  = "!f() { cd \"${GIT_PREFIX:-.}\" && env a \"$@\"; }; f"
     co = checkout
     sw = switch
-    st = status
-    s  = status -s
+    st = "!f() { cd \"${GIT_PREFIX:-.}\" && env st \"$@\"; }; f"
+    s  = "!f() { cd \"${GIT_PREFIX:-.}\" && env s \"$@\"; }; f"
     br = branch
     m  = merge
 
     # ─── Commits ──────────────────────────────────────────────────────────────
     ci   = commit --signoff
-    c    = commit --signoff -m
+    c    = "!f() { cd \"${GIT_PREFIX:-.}\" && env c \"$@\"; }; f"
+    cm   = "!f() { cd \"${GIT_PREFIX:-.}\" && env cm \"$@\"; }; f"
+    ac   = "!f() { cd \"${GIT_PREFIX:-.}\" && env ac \"$@\"; }; f"
     ca   = commit --signoff -am
-    fuck = commit --signoff --amend -m
+    fuck = "!f() { cd \"${GIT_PREFIX:-.}\" && env fuck \"$@\"; }; f"
 
     # ─── Sync & Remote ────────────────────────────────────────────────────────
-    l  = pull
-    p  = "!git push origin $(git rev-parse --abbrev-ref HEAD)"
+    l  = "!f() { cd \"${GIT_PREFIX:-.}\" && env l \"$@\"; }; f"
+    p  = "!f() { cd \"${GIT_PREFIX:-.}\" && env p \"$@\"; }; f"
 
     # ─── History & Logs ───────────────────────────────────────────────────────
-    lg   = log --color --graph --pretty=format:'%C(green)%h%C(reset) -%C(yellow)%d%C(reset) %s %C(green)(%cr)%C(reset) %C(bold blue)<%an>%Creset' --abbrev-commit --all
+    lg   = "!f() { cd \"${GIT_PREFIX:-.}\" && env lg \"$@\"; }; f"
     pi   = log -p
     llog = log --graph --name-status --pretty=format:\"%C(red)%h %C(reset)(%cd) %C(green)%an %Creset%s %C(yellow)%d%Creset\" --date=relative
 
     # ─── Branch Management & Rebase ───────────────────────────────────────────
     re  = rebase -i
     reb = "!r() { git rebase -i HEAD~$1; }; r"
-    bye = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
+    bye = "!f() { cd \"${GIT_PREFIX:-.}\" && env bye \"$@\"; }; f"
 
     # ─── Stash & Tags ─────────────────────────────────────────────────────────
     stash   = stash -all
@@ -34,17 +36,17 @@
     tag     = tag -s
 
     # ─── Inspection & Diff ────────────────────────────────────────────────────
-    d  = diff --word-diff -M -C
+    d  = "!f() { cd \"${GIT_PREFIX:-.}\" && env d \"$@\"; }; f"
     bl = blame -w -C -C -C --color-lines --color-by-age
 
     # ─── Search & Info ────────────────────────────────────────────────────────
     alias        = config --get-regexp alias
     contributors = shortlog --summary --numbered
     # Find commits by source code
-    fc           = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+    fc           = "!f() { cd \"${GIT_PREFIX:-.}\" && env fc \"$@\"; }; f"
     # Find commits by commit message
-    fm           = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+    fm           = "!f() { cd \"${GIT_PREFIX:-.}\" && env fm \"$@\"; }; f"
 
     # ─── Interactive & Fuzzy ──────────────────────────────────────────────────
-    af = "!git add $(git ls-files -m -o --exclude-standard | fzf -m)"
-    df = "!git lg | peco | awk '{print $2}' | xargs -I {} git diff {}^ {}"
+    af = "!f() { cd \"${GIT_PREFIX:-.}\" && env af \"$@\"; }; f"
+    df = "!f() { cd \"${GIT_PREFIX:-.}\" && env df \"$@\"; }; f"

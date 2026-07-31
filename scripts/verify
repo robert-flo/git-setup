@@ -124,6 +124,33 @@ verify_generated_git_config_files() {
   done
 }
 
+verify_managed_workflow_commands() {
+  local -a workflow_commands=(a c cm ac p l st s d lg af fuck bye clean df fc fm)
+  local -a workflow_aliases=(a c cm ac p l st s d lg af fuck bye df fc fm)
+  local workflow_command=""
+  local expected_alias=""
+  local effective_alias=""
+
+  print_section "${ICON_GIT} Managed Workflow Commands"
+  for workflow_command in .git-workflow "${workflow_commands[@]}"; do
+    if [[ -x $WORKFLOW_COMMAND_DIR/$workflow_command ]]; then
+      print_success "Found: ${GRAY}${WORKFLOW_COMMAND_DIR/#$HOME/\~}/$workflow_command${NC}"
+    else
+      print_error "Missing: ${GRAY}${WORKFLOW_COMMAND_DIR/#$HOME/\~}/$workflow_command${NC}"
+    fi
+  done
+
+  for workflow_command in "${workflow_aliases[@]}"; do
+    expected_alias=$(git config --file "$GIT_CONFIG_DIR/gitconfig_aliases" --get "alias.$workflow_command" 2> /dev/null || true)
+    effective_alias=$(git config --global --get "alias.$workflow_command" 2> /dev/null || true)
+    if [[ -n $expected_alias && $effective_alias == "$expected_alias" ]]; then
+      print_success "Alias: ${WHITE}git $workflow_command${NC}"
+    else
+      print_warn "Alias override: ${YELLOW}git $workflow_command${NC} does not use the managed workflow command"
+    fi
+  done
+}
+
 verify_ssh() {
   print_section "${ICON_KEY} SSH Authentication"
 
@@ -395,6 +422,7 @@ verify_github_auth() {
 do_verify() {
   verify_git_config
   verify_generated_git_config_files
+  verify_managed_workflow_commands
   verify_ssh
   verify_gpg
   verify_github_auth

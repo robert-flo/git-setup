@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# lg — show recent history. Usage: lg | git lg | make lg.
+exec "$(dirname "$0")/.git-workflow" lg "$@"

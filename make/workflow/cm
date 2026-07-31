@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# cm — commit with a message. Usage: cm "message" | git cm "message" | make cm "message".
+exec "$(dirname "$0")/.git-workflow" cm "$@"

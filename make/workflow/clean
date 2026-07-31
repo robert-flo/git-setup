@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# clean — review merged worktrees and branches. Usage: clean | git bye | make clean.
+exec "$(dirname "$0")/.git-workflow" clean "$@"

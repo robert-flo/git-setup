@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# bye — cleanup synonym. Usage: bye | git bye | make bye.
+exec "$(dirname "$0")/.git-workflow" bye "$@"

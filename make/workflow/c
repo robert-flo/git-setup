@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# c — create a timestamped commit. Usage: c | git c | make c.
+exec "$(dirname "$0")/.git-workflow" c "$@"

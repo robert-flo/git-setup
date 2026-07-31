@@ -142,6 +142,52 @@ nvim ~/.config/git/gitconfig.local
 
 `gitconfig.local` is loaded last and is never generated, updated, or removed.
 
+## Managed Git Workflow Commands
+
+`git-setup config` also installs a managed workflow set in `~/.local/bin`.
+Every operation has the same three workflow surfaces: a direct command, a Git
+alias, and a portable Make alias. For example, these are equivalent:
+
+```shell
+s
+git s
+make s
+```
+
+The managed commands are `a`, `c`, `cm`, `ac`, `p`, `l`, `st`, `s`, `d`, `lg`,
+`af`, `fuck`, `bye`, `clean`, `df`, `fc`, and `fm`. The Make companions live in
+`make/workflow/` and travel with the repository fragment, so `make s` remains usable in a repository that
+has not run `git-setup config`.
+
+`clean` is the one Git-surface exception: Git's native `git clean` cannot be
+overridden by an alias. Use `clean` or `make clean` for the managed safe cleanup
+workflow, and `git bye` for its Git alias; `git clean` retains Git's native
+behaviour.
+
+Commands that accept input use the same positional form everywhere:
+
+```shell
+cm "docs: explain the workflow"
+git cm "docs: explain the workflow"
+make cm "docs: explain the workflow"
+
+fc "workflow"
+fm "docs"
+fuck "fix: amend the previous commit"
+```
+
+`c` creates the existing timestamped commit; `cm` creates a commit with your
+message. For Make compatibility, `MSG="..."` and `CODE="..."` continue to work
+where they did before. Preview a mutating operation on any surface with
+`DRY_RUN=1`, for example `DRY_RUN=1 ac`, `DRY_RUN=1 git ac`, or
+`DRY_RUN=1 make ac`.
+
+Running `git-setup config` refreshes these owned command files. Running
+`git-setup clean` removes only them and its private runtime after confirmation;
+it never removes `~/.local/bin` or unrelated commands. A personal or
+repository-local Git alias may deliberately override a managed alias; `git-setup
+verify` reports that condition.
+
 ---
 
 <br>

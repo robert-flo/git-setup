@@ -93,6 +93,35 @@ generate_git_config_files() {
   echo ""
   print_info "To change their generated defaults, edit the templates in ${CYAN}$TEMPLATE_DIR${NC}."
   echo ""
+
+  install_managed_workflow_commands
+}
+
+install_managed_workflow_commands() {
+  local workflow_source_dir="$PROJECT_DIR/make/workflow"
+  local -a workflow_files=(.git-workflow a c cm ac p l st s d lg af fuck bye clean df fc fm)
+  local workflow_file=""
+  local action=""
+
+  [[ -d $workflow_source_dir ]] || {
+    print_error "Missing portable workflow companions: $workflow_source_dir"
+    return 1
+  }
+  mkdir -p "$WORKFLOW_COMMAND_DIR"
+
+  print_section "${ICON_GIT} Managed Workflow Commands"
+  for workflow_file in "${workflow_files[@]}"; do
+    [[ -f $workflow_source_dir/$workflow_file ]] || {
+      print_error "Missing portable workflow companion: $workflow_file"
+      return 1
+    }
+    if [[ -e $WORKFLOW_COMMAND_DIR/$workflow_file ]]; then action="Updated"; else action="Created"; fi
+    cp "$workflow_source_dir/$workflow_file" "$WORKFLOW_COMMAND_DIR/$workflow_file"
+    chmod 0755 "$WORKFLOW_COMMAND_DIR/$workflow_file"
+    print_success "$action: ${WHITE}$WORKFLOW_COMMAND_DIR/$workflow_file${NC}"
+  done
+  print_info "Commands: ${CYAN}s${NC}, ${CYAN}git s${NC}, and ${CYAN}make s${NC} share one workflow surface."
+  echo ""
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then

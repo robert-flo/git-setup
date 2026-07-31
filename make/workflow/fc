@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# fc — search commits by code change. Usage: fc "query" | git fc "query" | make fc "query".
+exec "$(dirname "$0")/.git-workflow" fc "$@"
