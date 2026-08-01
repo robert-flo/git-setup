@@ -40,7 +40,7 @@ mkdir -p "$TEST_BIN" "$DEFAULT_HOME" "$CUSTOM_HOME"
 
 # Keep tests offline and prevent access to the developer's GitHub, SSH, or GPG
 # sessions. The commands are present so `verify` exercises its complete flow.
-for command in gh ssh ssh-add pgrep delta; do
+for command in gh ssh ssh-add pgrep delta gpgconf; do
   printf '%s\n' '#!/usr/bin/env bash' 'exit 1' > "$TEST_BIN/$command"
   chmod +x "$TEST_BIN/$command"
 done
@@ -337,6 +337,86 @@ NAME='Direct Module User' EMAIL='direct-module@example.test' \
 require_file "$DIRECT_MODULE_HOME/.config/git/config"
 require_output "$TEST_ROOT/direct-module-output" 'Git Configuration Files'
 
+# Each command remains independently executable at the public runtime seam.
+run_direct_verify_status=0
+HOME="$DIRECT_MODULE_HOME" XDG_CONFIG_HOME="$DIRECT_MODULE_HOME/.config" \
+  TERM=dumb PATH="$TEST_BIN:$PATH" \
+  "$ROOT_DIR/runtime/scripts/verify" > "$TEST_ROOT/direct-verify-output" 2>&1 || run_direct_verify_status=$?
+((run_direct_verify_status != 0)) || fail 'direct verify unexpectedly succeeded with missing credentials'
+require_output "$TEST_ROOT/direct-verify-output" 'Generated Git Configuration Files'
+
+printf 'no\n' | HOME="$DIRECT_MODULE_HOME" XDG_CONFIG_HOME="$DIRECT_MODULE_HOME/.config" \
+  TERM=dumb PATH="$TEST_BIN:$PATH" \
+  "$ROOT_DIR/runtime/scripts/clean" > "$TEST_ROOT/direct-clean-output"
+require_output "$TEST_ROOT/direct-clean-output" 'Cancelled'
+
+DIRECT_TEST_HOME="$TEST_ROOT/direct-test-home"
+mkdir -p "$DIRECT_TEST_HOME"
+direct_module_test_status=0
+HOME="$DIRECT_TEST_HOME" XDG_CONFIG_HOME="$DIRECT_TEST_HOME/.config" \
+  TERM=dumb PATH="$TEST_BIN:$PATH" \
+  "$ROOT_DIR/runtime/scripts/test" > "$TEST_ROOT/direct-module-test-output" 2>&1 || direct_module_test_status=$?
+((direct_module_test_status != 0)) || fail 'direct integration test unexpectedly succeeded without identity'
+require_output "$TEST_ROOT/direct-module-test-output" 'Git identity is not configured'
+((direct_test_status == direct_module_test_status)) || fail 'dispatcher changed the direct test exit status'
+
+setup_invalid_status=0
+HOME="$DIRECT_TEST_HOME" XDG_CONFIG_HOME="$DIRECT_TEST_HOME/.config" \
+  TERM=dumb PATH="$TEST_BIN:$PATH" \
+  "$ROOT_DIR/runtime/scripts/setup" --invalid > "$TEST_ROOT/direct-setup-invalid-output" 2>&1 || setup_invalid_status=$?
+((setup_invalid_status != 0)) || fail 'direct setup accepted an invalid option'
+require_output "$TEST_ROOT/direct-setup-invalid-output" 'Unknown option for setup: --invalid'
+
+# A fully stubbed setup exercises the direct success seam without contacting
+# GitHub or touching the developer's keys.
+SETUP_TEST_BIN="$TEST_ROOT/setup-bin"
+SETUP_HOME="$TEST_ROOT/setup-home"
+mkdir -p "$SETUP_TEST_BIN" "$SETUP_HOME"
+# shellcheck disable=SC2016 # Generated stub expressions expand at runtime.
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'case "${1:-}" in' \
+  '  auth)' \
+  '    [[ ${2:-} == status ]] && exit 1' \
+  '    [[ ${2:-} == login ]] && { cat > /dev/null; exit 0; }' \
+  '    exit 0' \
+  '    ;;' \
+  '  api | ssh-key | gpg-key) exit 0 ;;' \
+  'esac' \
+  'exit 0' > "$SETUP_TEST_BIN/gh"
+chmod +x "$SETUP_TEST_BIN/gh"
+# shellcheck disable=SC2016 # Generated stub expressions expand at runtime.
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'key_file=""' \
+  'while (($# > 0)); do' \
+  '  if [[ $1 == -f ]]; then key_file=$2; shift 2; else shift; fi' \
+  'done' \
+  'mkdir -p "$(dirname "$key_file")"' \
+  ': > "$key_file"' \
+  ': > "$key_file.pub"' > "$SETUP_TEST_BIN/ssh-keygen"
+chmod +x "$SETUP_TEST_BIN/ssh-keygen"
+# shellcheck disable=SC2016 # Generated stub expressions expand at runtime.
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'case "${1:-}" in' \
+  '  --list-secret-keys) exit 1 ;;' \
+  '  --armor) printf "stub-key\\n"; exit 0 ;;' \
+  'esac' \
+  'exit 0' > "$SETUP_TEST_BIN/gpg"
+chmod +x "$SETUP_TEST_BIN/gpg"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$SETUP_TEST_BIN/gpgconf"
+chmod +x "$SETUP_TEST_BIN/gpgconf"
+setup_success_status=0
+printf 'token\n3\n' | NAME='Setup User' EMAIL='setup@example.test' \
+  HOME="$SETUP_HOME" XDG_CONFIG_HOME="$SETUP_HOME/.config" \
+  TERM=dumb PATH="$SETUP_TEST_BIN:$TEST_BIN:$PATH" \
+  "$ROOT_DIR/runtime/scripts/setup" > "$TEST_ROOT/direct-setup-output" 2>&1 || setup_success_status=$?
+((setup_success_status == 0)) || fail 'stubbed direct setup did not succeed'
+require_file "$SETUP_HOME/.config/git/config"
+require_file "$SETUP_HOME/.ssh/id_ed25519.pub"
+require_output "$TEST_ROOT/direct-setup-output" 'Setup Complete'
+
 # Short and option aliases must resolve through the same public dispatcher.
 run_setup "$CUSTOM_HOME" -f > "$TEST_ROOT/config-alias-output"
 require_output "$TEST_ROOT/config-alias-output" 'Git Configuration Files'
@@ -350,6 +430,33 @@ run_setup "$UNCONFIGURED_HOME" t > "$TEST_ROOT/test-alias-output" 2>&1 || alias_
 require_output "$TEST_ROOT/test-alias-output" 'Git identity is not configured'
 printf 'no\n' | run_setup "$CUSTOM_HOME" c > "$TEST_ROOT/clean-alias-output"
 require_output "$TEST_ROOT/clean-alias-output" 'Cancelled'
+
+# Every documented alias reaches its canonical command module. Help keeps
+# these routing checks offline and side-effect free.
+for alias in --config -f; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'Git Configuration Usage'
+done
+for alias in --verify -v; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'Git Verification Usage'
+done
+for alias in s --setup -s; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'Git Setup Usage'
+done
+for alias in --test -t; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'Git Integration Test Usage'
+done
+for alias in --clean -c; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'Git Cleanup Usage'
+done
+for alias in h -h; do
+  run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
+  require_output "$TEST_ROOT/alias-help-output" 'GITHUB TOKEN'
+done
 
 # Invoking without arguments remains the original interactive RaVN menu.
 printf 'q\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-output"

@@ -103,3 +103,26 @@ jobs:
       - name: Run changelog automation tests
         shell: bash
         run: bash tests/changelog-automation.sh
+
+  docker-runtime:
+    name: Smoke test relocated Docker runtime (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - environment: arch
+            dockerfile: Dockerfile
+          - environment: ubuntu
+            dockerfile: docker/ubuntu.Dockerfile
+          - environment: fedora
+            dockerfile: docker/fedora.Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build relocated runtime image
+        run: docker build --file "${{ matrix.dockerfile }}" --tag "git-setup:runtime-${{ matrix.environment }}" .
+
+      - name: Execute relocated runtime entrypoint
+        run: docker run --rm "git-setup:runtime-${{ matrix.environment }}" --help

@@ -9,6 +9,9 @@ RUN pacman -Syu --noconfirm --needed \
 
 WORKDIR /opt/git-setup
 COPY . /opt/git-setup
-RUN chmod +x git-setup runtime/scripts/*
+RUN chmod +x git-setup runtime/scripts/* \
+    && test -x runtime/scripts/config \
+    && test -f runtime/templates/git/config \
+    && runtime/scripts/help --help > /dev/null
 
 ENTRYPOINT ["/opt/git-setup/git-setup"]

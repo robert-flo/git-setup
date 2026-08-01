@@ -14,6 +14,17 @@ fail() {
 }
 
 mkdir -p "$TEST_BIN"
+
+# Docker images must carry the relocated executable runtime, not stale root
+# directories that bypass the shared path configuration.
+for dockerfile in Dockerfile docker/ubuntu.Dockerfile docker/fedora.Dockerfile; do
+  grep -Fq 'COPY . /opt/git-setup' "$dockerfile" || fail "$dockerfile did not copy the project payload"
+  grep -Fq 'chmod +x git-setup runtime/scripts/*' "$dockerfile" || fail "$dockerfile did not preserve executable runtime commands"
+  grep -Fq 'runtime/scripts/help --help' "$dockerfile" || fail "$dockerfile did not smoke-test the relocated entrypoint"
+done
+[[ -x runtime/scripts/config ]] || fail 'relocated config command is not executable'
+[[ -f runtime/templates/git/config ]] || fail 'relocated Git template is missing'
+
 # shellcheck disable=SC2016 # The generated Docker stub expands this at runtime.
 printf '%s\n' \
   '#!/usr/bin/env bash' \
