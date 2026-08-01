@@ -3,32 +3,15 @@
 # Resolve a public command name and execute its autonomous command module.
 dispatch_command() {
   local command="${1:-}"
+  local canonical=""
   local script=""
 
-  case "$command" in
-    verify | v | --verify | -v)
-      script="$PROJECT_DIR/scripts/verify"
-      ;;
-    config | f | --config | -f)
-      script="$PROJECT_DIR/scripts/config"
-      ;;
-    setup | s | --setup | -s)
-      script="$PROJECT_DIR/scripts/setup"
-      ;;
-    test | t | --test | -t)
-      script="$PROJECT_DIR/scripts/test"
-      ;;
-    clean | c | --clean | -c)
-      script="$PROJECT_DIR/scripts/clean"
-      ;;
-    help | h | --help | -h)
-      script="$PROJECT_DIR/scripts/help"
-      ;;
-    *)
-      print_error "Unknown command: $command"
-      return 2
-      ;;
-  esac
+  command_catalog_get "$command" canonical || {
+    print_error "$GIT_SETUP_COMMAND_CATALOG_ERROR"
+    return 2
+  }
+  canonical="$GIT_SETUP_COMMAND_CATALOG_VALUE"
+  script="$PROJECT_DIR/scripts/$canonical"
 
   if [[ ! -x $script ]]; then
     print_error "Command module is not executable: $script"
