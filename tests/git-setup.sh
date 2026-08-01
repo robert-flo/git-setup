@@ -271,6 +271,35 @@ done
 for command in "${workflow_commands[@]}"; do
   require_output "$TEST_ROOT/verify-output" "Found: ~/.local/bin/$command"
 done
+for command in a c cm ac p l st s d lg af fuck bye df fc fm; do
+  require_output "$TEST_ROOT/verify-output" "Alias: git $command"
+done
+
+# An alias defined by the repository must still be reported as an override of
+# the globally managed workflow alias.
+ALIAS_OVERRIDE_REPOSITORY="$TEST_ROOT/alias-override-repository"
+mkdir -p "$ALIAS_OVERRIDE_REPOSITORY"
+git -C "$ALIAS_OVERRIDE_REPOSITORY" init -q
+git -C "$ALIAS_OVERRIDE_REPOSITORY" config alias.a status
+(
+  cd "$ALIAS_OVERRIDE_REPOSITORY"
+  HOME="$CUSTOM_HOME" XDG_CONFIG_HOME="$CUSTOM_HOME/.config" TERM=dumb \
+    PATH="$TEST_BIN:$PATH" "$GIT_SETUP" verify
+) > "$TEST_ROOT/alias-override-output" 2>&1 || true
+require_output "$TEST_ROOT/alias-override-output" 'Alias override: git a'
+
+# A stale SSH_AUTH_SOCK must be diagnosed as an unavailable agent socket, not
+# as an agent that failed to load a valid key.
+SSH_VERIFY_HOME="$TEST_ROOT/ssh-verify-home"
+mkdir -p "$SSH_VERIFY_HOME/.ssh"
+printf '%s\n' 'test-private-key' > "$SSH_VERIFY_HOME/.ssh/id_ed25519"
+printf '%s\n' 'ssh-ed25519 AAAATEST test@example.test' > "$SSH_VERIFY_HOME/.ssh/id_ed25519.pub"
+SSH_AUTH_SOCK="$TEST_ROOT/stale-agent.socket" \
+  run_setup "$SSH_VERIFY_HOME" verify > "$TEST_ROOT/stale-ssh-output" || true
+require_output "$TEST_ROOT/stale-ssh-output" 'SSH agent socket unavailable'
+if grep -Fq 'Failed to load SSH key' "$TEST_ROOT/stale-ssh-output"; then
+  fail 'stale SSH socket attempted to load the key'
+fi
 
 # Clean must disclose the managed files and remain non-destructive until 'yes'.
 printf 'no\n' | run_setup "$CUSTOM_HOME" clean > "$TEST_ROOT/clean-output"

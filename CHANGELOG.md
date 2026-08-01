@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Fix false workflow-alias warnings and stale SSH agent sockets ([#50](https://github.com/robert-flo/git-setup/pull/50)). <!-- changelog-pr:50 -->
+
+
 ### Added
 
 - Add Bash and Zsh completion from the command contract ([#48](https://github.com/robert-flo/git-setup/pull/48)). <!-- changelog-pr:48 -->

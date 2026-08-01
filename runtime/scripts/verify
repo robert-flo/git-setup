@@ -139,7 +139,10 @@ verify_managed_workflow_commands() {
 
   for workflow_command in "${workflow_aliases[@]}"; do
     expected_alias=$(git config --file "$GIT_CONFIG_DIR/gitconfig_aliases" --get "alias.$workflow_command" 2> /dev/null || true)
-    effective_alias=$(git config --global --get "alias.$workflow_command" 2> /dev/null || true)
+    # Use the effective configuration so aliases loaded through include.path
+    # are visible. A repository-local alias can still be reported as an
+    # override because `git config --get` follows Git's normal precedence.
+    effective_alias=$(git config --get "alias.$workflow_command" 2> /dev/null || true)
     if [[ -n $expected_alias && $effective_alias == "$expected_alias" ]]; then
       print_success "Alias: ${WHITE}git $workflow_command${NC}"
     else
@@ -177,15 +180,37 @@ verify_ssh() {
   fi
 
   # 3. Check SSH agent and load key if needed
-  if [[ -n ${SSH_AUTH_SOCK:-} ]]; then
+  if [[ -z ${SSH_AUTH_SOCK:-} ]]; then
+    print_warn "SSH agent not detected"
+  elif [[ ! -S $SSH_AUTH_SOCK ]]; then
+    print_warn "SSH agent socket unavailable"
+    print_info "SSH_AUTH_SOCK points to a missing socket: ${GRAY}$SSH_AUTH_SOCK${NC}"
+  else
     local loaded_keys=0
-    loaded_keys=$(ssh-add -l 2> /dev/null | grep -c "SHA256" || true)
-    loaded_keys=${loaded_keys//[^0-9]/}
-    [[ -z $loaded_keys ]] && loaded_keys=0
+    local agent_status=0
+    local agent_output=""
+    local agent_has_no_keys=false
 
-    if ((loaded_keys > 0)); then
-      print_success "SSH agent running: ${WHITE}$loaded_keys${NC} key(s) loaded"
-    else
+    agent_output=$(ssh-add -l 2> /dev/null) || agent_status=$?
+    case $agent_status in
+      0)
+        loaded_keys=$(grep -c "SHA256" <<< "$agent_output" || true)
+        loaded_keys=${loaded_keys//[^0-9]/}
+        [[ -z $loaded_keys ]] && loaded_keys=0
+        if ((loaded_keys > 0)); then
+          print_success "SSH agent running: ${WHITE}$loaded_keys${NC} key(s) loaded"
+        else
+          agent_has_no_keys=true
+        fi
+        ;;
+      1) agent_has_no_keys=true ;;
+      *)
+        print_warn "SSH agent unavailable"
+        print_info "Could not connect to the agent at: ${GRAY}$SSH_AUTH_SOCK${NC}"
+        ;;
+    esac
+
+    if [[ $agent_has_no_keys == true ]]; then
       print_warn "SSH agent running but no keys loaded"
       print_step "Loading SSH key into agent..."
       if ssh-add "$key_path" 2> /dev/null; then
@@ -195,8 +220,6 @@ verify_ssh() {
         print_info "Try manually: ${GRAY}ssh-add ${key_path/#$HOME/\~}${NC}"
       fi
     fi
-  else
-    print_warn "SSH agent not detected"
   fi
 
   # 4. Test GitHub SSH connection
