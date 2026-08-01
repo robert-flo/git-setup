@@ -417,6 +417,16 @@ require_file "$SETUP_HOME/.config/git/config"
 require_file "$SETUP_HOME/.ssh/id_ed25519.pub"
 require_output "$TEST_ROOT/direct-setup-output" 'Setup Complete'
 
+DISPATCH_SETUP_HOME="$TEST_ROOT/dispatcher-setup-home"
+mkdir -p "$DISPATCH_SETUP_HOME"
+dispatcher_setup_status=0
+printf 'token\n3\n' | NAME='Dispatcher Setup User' EMAIL='dispatcher@example.test' \
+  HOME="$DISPATCH_SETUP_HOME" XDG_CONFIG_HOME="$DISPATCH_SETUP_HOME/.config" \
+  TERM=dumb PATH="$SETUP_TEST_BIN:$TEST_BIN:$PATH" \
+  "$GIT_SETUP" setup > "$TEST_ROOT/dispatcher-setup-output" 2>&1 || dispatcher_setup_status=$?
+((dispatcher_setup_status == 0)) || fail 'dispatcher setup command did not succeed with stubs'
+require_file "$DISPATCH_SETUP_HOME/.config/git/config"
+
 # Short and option aliases must resolve through the same public dispatcher.
 run_setup "$CUSTOM_HOME" -f > "$TEST_ROOT/config-alias-output"
 require_output "$TEST_ROOT/config-alias-output" 'Git Configuration Files'
@@ -437,10 +447,14 @@ for alias in --config -f; do
   run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
   require_output "$TEST_ROOT/alias-help-output" 'Git Configuration Usage'
 done
+run_setup "$CUSTOM_HOME" f --help > "$TEST_ROOT/alias-help-output"
+require_output "$TEST_ROOT/alias-help-output" 'Git Configuration Usage'
 for alias in --verify -v; do
   run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
   require_output "$TEST_ROOT/alias-help-output" 'Git Verification Usage'
 done
+run_setup "$CUSTOM_HOME" v --help > "$TEST_ROOT/alias-help-output"
+require_output "$TEST_ROOT/alias-help-output" 'Git Verification Usage'
 for alias in s --setup -s; do
   run_setup "$CUSTOM_HOME" "$alias" --help > "$TEST_ROOT/alias-help-output"
   require_output "$TEST_ROOT/alias-help-output" 'Git Setup Usage'
