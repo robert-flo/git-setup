@@ -9,7 +9,20 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   PROJECT_DIR="$GIT_SETUP_ROOT"
   # shellcheck disable=SC1091
   source "$PROJECT_DIR/lib/global_fn.sh"
+  # shellcheck disable=SC1091 # Focused command interface helper.
+  source "$PROJECT_DIR/lib/command_interface.sh"
 fi
+
+show_clean_help() {
+  print_section "Git Cleanup Usage"
+  cat << 'HELP_EOF'
+  Usage: git-setup clean [--help]
+
+  Remove git-setup-managed keys, generated files, workflow commands, and GitHub
+  CLI authentication after an explicit confirmation. Personal gitconfig.local
+  content is preserved.
+HELP_EOF
+}
 
 do_clean() {
   print_header "󰃢 Clean Local Git Configuration"
@@ -150,5 +163,5 @@ do_clean() {
 # └──────────────────────────────────────────────────────────────────────────────┘
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
-  do_clean
+  run_command_entrypoint clean show_clean_help do_clean "$@"
 fi

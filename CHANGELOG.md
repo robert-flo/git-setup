@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- Add self-describing command interfaces and dependency-independent help ([#43](https://github.com/robert-flo/git-setup/pull/43)). <!-- changelog-pr:43 -->
+
 - fix: require repository context for workflow commands ([#32](https://github.com/robert-flo/git-setup/pull/32)). <!-- changelog-pr:32 -->
 
 
