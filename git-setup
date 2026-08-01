@@ -13,14 +13,18 @@ RUNTIME_DIR="$scrDir/runtime"
 source "$RUNTIME_DIR/helper/set_variable.sh"
 PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
 # shellcheck disable=SC1091
-if ! source "$PROJECT_DIR/lib/global_fn.sh"; then
-  echo "Error: unable to source global_fn.sh..."
+if ! source "$PROJECT_DIR/lib/presentation.sh"; then
+  echo "Error: unable to source presentation.sh..."
   exit 1
 fi
 # shellcheck disable=SC1091
+source "$PROJECT_DIR/lib/dependencies.sh"
+# shellcheck disable=SC1091
+source "$PROJECT_DIR/lib/lifecycle.sh"
+# shellcheck disable=SC1091
 source "$PROJECT_DIR/lib/dispatch.sh"
 
-trap cleanup SIGINT SIGTERM ERR EXIT
+trap cleanup_runtime SIGINT SIGTERM ERR EXIT
 
 # ┌──────────────────────────────────────────────────────────────────────────────┐
 # │ Configuration                                                                │
@@ -29,13 +33,6 @@ trap cleanup SIGINT SIGTERM ERR EXIT
 # ┌──────────────────────────────────────────────────────────────────────────────┐
 # │ Helper Functions                                                             │
 # └──────────────────────────────────────────────────────────────────────────────┘
-
-cleanup() {
-  trap - SIGINT SIGTERM ERR EXIT
-  if [[ -f /tmp/gpg_batch ]]; then
-    rm -f /tmp/gpg_batch
-  fi
-}
 
 is_running_in_docker() {
   [[ ${GIT_SETUP_DOCKER_TRIAL:-} == 1 ]] && return 0
