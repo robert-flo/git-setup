@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## [0.3.0] - 2026-08-01
+
 ### Fixed
 
 - Fix false workflow-alias warnings and stale SSH agent sockets ([#50](https://github.com/robert-flo/git-setup/pull/50)). <!-- changelog-pr:50 -->
