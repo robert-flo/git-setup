@@ -23,7 +23,7 @@ fi
 show_verify_help() {
   print_section "Git Verification Usage"
   cat << 'HELP_EOF'
-  Usage: git-setup verify [--help]
+  Usage: git-setup verify [-h|--help]
 
   Review Git, SSH, GPG, GitHub, and generated configuration files without
   changing them.

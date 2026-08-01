@@ -50,7 +50,7 @@ prompt_setup_identity() {
 show_setup_help() {
   print_section "Git Setup Usage"
   cat << 'HELP_EOF'
-  Usage: git-setup setup [--help]
+  Usage: git-setup setup [-h|--help]
 
   Configure GitHub authentication, SSH and GPG keys, generated Git files, and
   commit signing. This command can modify local configuration and remote keys.

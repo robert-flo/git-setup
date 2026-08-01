@@ -16,7 +16,7 @@ fi
 show_clean_help() {
   print_section "Git Cleanup Usage"
   cat << 'HELP_EOF'
-  Usage: git-setup clean [--help]
+  Usage: git-setup clean [-h|--help]
 
   Remove git-setup-managed keys, generated files, workflow commands, and GitHub
   CLI authentication after an explicit confirmation. Personal gitconfig.local

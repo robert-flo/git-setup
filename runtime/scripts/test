@@ -16,7 +16,7 @@ fi
 show_test_help() {
   print_section "Git Integration Test Usage"
   cat << 'HELP_EOF'
-  Usage: git-setup test [--help]
+  Usage: git-setup test [-h|--help]
 
   Create a temporary repository, verify a signed commit, and optionally push a
   temporary repository to GitHub. A configured Git identity is required.
