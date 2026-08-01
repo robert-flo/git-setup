@@ -143,6 +143,10 @@ esa carpeta.
   lenguaje, `runtime/commands.tsv`, con un registro por comando. El loader de
   Bash, el completion de Zsh, el menú, la ayuda y el dispatcher leerán ese
   contrato; ningún loader de shell será la fuente exclusiva de la metadata.
+- Cada registro también declarará las opciones públicas del comando. El
+  contrato de `run_command_entrypoint`, la completion y cualquier futura
+  interfaz deberán derivar de ese campo, comenzando por `-h --help`, para no
+  duplicar listas de opciones en cada shell.
 - La solución no debe hacer obligatorio `fzf` para el menú principal ni copiar
   el modelo de repositorio Git bare de otros proyectos de dotfiles.
 - La implementación debe preservar la compatibilidad de las invocaciones
