@@ -22,6 +22,8 @@ source "$PROJECT_DIR/lib/dependencies.sh"
 # shellcheck disable=SC1091
 source "$PROJECT_DIR/lib/lifecycle.sh"
 # shellcheck disable=SC1091
+source "$PROJECT_DIR/lib/command_catalog.sh"
+# shellcheck disable=SC1091
 source "$PROJECT_DIR/lib/dispatch.sh"
 
 trap cleanup_runtime SIGINT SIGTERM ERR EXIT
@@ -82,13 +84,31 @@ is_help_command() {
 }
 
 show_menu() {
+  local command=""
+  local label=""
+  local icon=""
+  local menu_index=1
+
   echo ""
   print_section "${RAVN_ICON[ui_command]} Choose an action"
-  echo -e "  ${GREEN}1${NC}  ${RAVN_ICON[ui_check]}  Verify current configuration"
-  echo -e "  ${GREEN}2${NC}  ${RAVN_ICON[ui_gear]}  Run full setup"
-  echo -e "  ${GREEN}3${NC}  ${RAVN_ICON[ui_test]}  Run integration test"
-  echo -e "  ${GREEN}4${NC}  ${RAVN_ICON[ui_trash]}  Clean local config (fresh start)"
-  echo -e "  ${GREEN}h${NC}  󰋖  Help and usage"
+  while IFS= read -r command; do
+    command_catalog_get "$command" label || {
+      print_error "$GIT_SETUP_COMMAND_CATALOG_ERROR"
+      return 1
+    }
+    label="$GIT_SETUP_COMMAND_CATALOG_VALUE"
+    command_catalog_get "$command" icon || {
+      print_error "$GIT_SETUP_COMMAND_CATALOG_ERROR"
+      return 1
+    }
+    icon="$GIT_SETUP_COMMAND_CATALOG_VALUE"
+    if [[ $command == help ]]; then
+      echo -e "  ${GREEN}h${NC}  $icon  $label"
+    else
+      echo -e "  ${GREEN}$menu_index${NC}  $icon  $label"
+      ((menu_index += 1))
+    fi
+  done < <(command_catalog_list menu)
   echo -e "  ${GREEN}q${NC}  ${RAVN_ICON[ui_close]}  Exit"
   echo ""
   echo -ne "  ${LIGHT_GRAY}Selection:${NC} "

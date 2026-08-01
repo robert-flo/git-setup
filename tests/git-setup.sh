@@ -362,6 +362,15 @@ require_output "$TEST_ROOT/menu-output" 'Help and usage'
 run_setup "$CUSTOM_HOME" help > "$TEST_ROOT/help-output"
 require_output "$TEST_ROOT/help-output" 'GITHUB TOKEN'
 require_output "$TEST_ROOT/help-output" 'CONFIGURATION FILES'
+require_output "$TEST_ROOT/help-output" 'config   Create or refresh the managed Git configuration files.'
+require_output "$TEST_ROOT/help-output" 'verify   Review Git, SSH, GPG, GitHub, and generated configuration files.'
+
+catalog_lookup_status=0
+catalog_lookup_output=$(
+  bash -c 'source "$1/runtime/lib/presentation.sh"; source "$1/runtime/lib/command_catalog.sh"; command_catalog_get missing label || printf "%s\n" "$GIT_SETUP_COMMAND_CATALOG_ERROR"' _ "$ROOT_DIR" 2>&1
+) || catalog_lookup_status=$?
+((catalog_lookup_status == 0)) || fail 'catalog lookup diagnostic command failed'
+grep -Fq 'Unknown command: missing' <<< "$catalog_lookup_output" || fail 'catalog lookup failure was not descriptive'
 printf 'h\n\nq\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-help-output"
 require_output "$TEST_ROOT/menu-help-output" 'RECOMMENDED FLOW'
 [[ $(grep -Fc 'Choose an action' "$TEST_ROOT/menu-help-output") -eq 2 ]] || fail 'menu did not return after help'

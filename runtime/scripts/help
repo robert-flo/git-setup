@@ -9,6 +9,8 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
   # shellcheck disable=SC1091
   source "$PROJECT_DIR/lib/presentation.sh"
+  # shellcheck disable=SC1091 # Shared command metadata for global help.
+  source "$PROJECT_DIR/lib/command_catalog.sh"
   # shellcheck disable=SC1091 # Focused command interface helper.
   source "$PROJECT_DIR/lib/command_interface.sh"
 fi
@@ -24,12 +26,11 @@ show_help() {
     git-setup <command>    Run one action directly
 
   COMMANDS
-    config   Create or refresh the managed Git configuration files.
-    verify   Review Git, SSH, GPG, GitHub, and generated configuration files.
-    setup    Configure a new machine with GitHub, SSH, GPG, and commit signing.
-    test     Create a test repository and verify a signed commit.
-    clean    Remove configuration created by git-setup after confirmation.
-    help     Show this guide.
+HELP_EOF
+
+  show_command_catalog || return 1
+
+  cat << 'HELP_EOF'
 
   CONFIGURATION FILES
     config creates these files in ~/.config/git:
@@ -78,6 +79,20 @@ show_help() {
     2. git-setup setup
     3. git-setup test
 HELP_EOF
+}
+
+show_command_catalog() {
+  local command=""
+  local description=""
+
+  while IFS= read -r command; do
+    command_catalog_get "$command" description || {
+      print_error "$GIT_SETUP_COMMAND_CATALOG_ERROR"
+      return 1
+    }
+    description="$GIT_SETUP_COMMAND_CATALOG_VALUE"
+    printf '    %-8s %s\n' "$command" "$description"
+  done < <(command_catalog_list all)
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
