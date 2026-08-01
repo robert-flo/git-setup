@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+# User-facing help command module.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  set -Eeuo pipefail
+  module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck disable=SC1091
+  source "$module_dir/../helper/set_variable.sh"
+  PROJECT_DIR="$GIT_SETUP_ROOT"
+  # shellcheck disable=SC1091
+  source "$PROJECT_DIR/lib/global_fn.sh"
+fi
+
+show_help() {
+  print_section "󰋖 Help and Usage"
+
+  cat << 'HELP_EOF'
+  git-setup prepares Git, GitHub, SSH, and GPG on Arch Linux.
+
+  BASIC USE
+    git-setup              Open the interactive menu
+    git-setup <command>    Run one action directly
+
+  COMMANDS
+    config   Create or refresh the managed Git configuration files.
+    verify   Review Git, SSH, GPG, GitHub, and generated configuration files.
+    setup    Configure a new machine with GitHub, SSH, GPG, and commit signing.
+    test     Create a test repository and verify a signed commit.
+    clean    Remove configuration created by git-setup after confirmation.
+    help     Show this guide.
+
+  CONFIGURATION FILES
+    config creates these files in ~/.config/git:
+      config, delta.gitconfig, gitattributes.global, gitconfig_aliases,
+      gitignore.global, and shell_aliases.
+
+    config also refreshes the managed Git workflow commands in ~/.local/bin.
+    Use each operation directly, as git <alias>, or as make <alias>.
+
+    ~/.config/git/gitconfig.local is personal. It is loaded last and is never
+    generated, updated, or removed by git-setup.
+
+  GITHUB TOKEN
+    Run full setup needs your saved GitHub Personal Access Token to connect
+    GitHub CLI and add the public SSH, SSH-signing, and GPG keys it creates.
+    Create the token once, keep it in 1Password or Bitwarden, and reuse it
+    whenever you configure a new machine.
+    See docs/github-token.md for the required scopes and GitHub web steps.
+
+  SETUP
+    Full setup asks for your name and email, creates the managed Git files,
+    creates or reuses SSH and GPG keys, adds their public keys to GitHub, and
+    lets you choose SSH, GPG, or no commit signing.
+
+  INTEGRATION TEST
+    The test needs the name and email created by full setup. It creates a
+    temporary local repository, makes a signed test commit, and can optionally
+    create, push, and remove a temporary GitHub repository.
+
+  DOCKER
+    make docker-run starts the same setup in an isolated container. Use your
+    saved token when prompted. Keys created inside the container do not persist
+    on your computer; their public keys are still added to GitHub.
+
+  AUTOMATION
+    Avoid identity prompts with:
+      NAME='Ada Lovelace' EMAIL='ada@example.com' git-setup config
+
+  CLEANUP
+    clean requires typing yes. It removes git-setup SSH keys, GPG keys for the
+    configured email, managed Git files, and the GitHub CLI authentication.
+    gitconfig.local is preserved.
+
+  RECOMMENDED FLOW
+    1. git-setup verify
+    2. git-setup setup
+    3. git-setup test
+HELP_EOF
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  show_help
+fi

@@ -262,6 +262,54 @@ if grep -Fq 'Push to GitHub?' "$TEST_ROOT/test-prerequisite-output"; then
   fail 'integration test offered a GitHub push without an identity'
 fi
 
+# Direct command failures must cross the public dispatcher unchanged and must
+# never fall through into the interactive menu.
+direct_test_status=0
+run_setup "$UNCONFIGURED_HOME" test > "$TEST_ROOT/direct-test-output" 2>&1 || direct_test_status=$?
+((direct_test_status != 0)) || fail 'direct test command swallowed its failure status'
+if grep -Fq 'Choose an action' "$TEST_ROOT/direct-test-output"; then
+  fail 'direct test command fell through into the interactive menu'
+fi
+
+# Unknown commands must fail clearly instead of silently opening the menu.
+UNKNOWN_HOME="$TEST_ROOT/unknown-command-home"
+mkdir -p "$UNKNOWN_HOME"
+unknown_command_status=0
+run_setup "$UNKNOWN_HOME" unknown > "$TEST_ROOT/unknown-command-output" 2>&1 || unknown_command_status=$?
+((unknown_command_status != 0)) || fail 'unknown command unexpectedly succeeded'
+require_output "$TEST_ROOT/unknown-command-output" 'Unknown command: unknown'
+if grep -Fq 'Choose an action' "$TEST_ROOT/unknown-command-output"; then
+  fail 'unknown command opened the interactive menu'
+fi
+if [[ -e "$UNKNOWN_HOME/.config/git/config" ]]; then
+  fail 'unknown command mutated configuration'
+fi
+
+# Command modules remain directly executable, independent of the menu and
+# root dispatcher.
+DIRECT_MODULE_HOME="$TEST_ROOT/direct-module-home"
+mkdir -p "$DIRECT_MODULE_HOME"
+NAME='Direct Module User' EMAIL='direct-module@example.test' \
+  HOME="$DIRECT_MODULE_HOME" XDG_CONFIG_HOME="$DIRECT_MODULE_HOME/.config" \
+  TERM=dumb PATH="$TEST_BIN:$PATH" \
+  "$ROOT_DIR/scripts/config" > "$TEST_ROOT/direct-module-output"
+require_file "$DIRECT_MODULE_HOME/.config/git/config"
+require_output "$TEST_ROOT/direct-module-output" 'Git Configuration Files'
+
+# Short and option aliases must resolve through the same public dispatcher.
+run_setup "$CUSTOM_HOME" -f > "$TEST_ROOT/config-alias-output"
+require_output "$TEST_ROOT/config-alias-output" 'Git Configuration Files'
+run_setup "$CUSTOM_HOME" -v > "$TEST_ROOT/verify-alias-output" || true
+require_output "$TEST_ROOT/verify-alias-output" 'Generated Git Configuration Files'
+run_setup "$CUSTOM_HOME" --help > "$TEST_ROOT/help-alias-output"
+require_output "$TEST_ROOT/help-alias-output" 'GITHUB TOKEN'
+alias_test_status=0
+run_setup "$UNCONFIGURED_HOME" t > "$TEST_ROOT/test-alias-output" 2>&1 || alias_test_status=$?
+((alias_test_status != 0)) || fail 'test alias unexpectedly succeeded without an identity'
+require_output "$TEST_ROOT/test-alias-output" 'Git identity is not configured'
+printf 'no\n' | run_setup "$CUSTOM_HOME" c > "$TEST_ROOT/clean-alias-output"
+require_output "$TEST_ROOT/clean-alias-output" 'Cancelled'
+
 # Invoking without arguments remains the original interactive RaVN menu.
 printf 'q\n' | run_setup "$CUSTOM_HOME" > "$TEST_ROOT/menu-output"
 require_output "$TEST_ROOT/menu-output" 'Git + GitHub + GPG Configuration for Arch Linux'
