@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Add Bash and Zsh completion from the command contract ([#48](https://github.com/robert-flo/git-setup/pull/48)). <!-- changelog-pr:48 -->
+
 - Make menu metadata the source of truth ([#46](https://github.com/robert-flo/git-setup/pull/46)). <!-- changelog-pr:46 -->
 
 - Introduce executable command dispatcher ([#42](https://github.com/robert-flo/git-setup/pull/42)). <!-- changelog-pr:42 -->
