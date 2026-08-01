@@ -20,13 +20,19 @@ The private executable, helpers, templates, and resources installed under
 `/opt/git-setup` by the Arch package.
 _Avoid_: User command, development checkout
 
+**Runtime payload**:
+The `runtime/` directory in the source repository that groups the private
+helpers, libraries, executable command modules, and templates used by the root
+launcher.
+_Avoid_: User command, public repository surface
+
 **Launcher**:
 The small executable installed in `/usr/bin/git-setup` that delegates to the
 installed payload.
 _Avoid_: Installed payload, package repository
 
 **Command module**:
-An executable in `scripts/` that implements one git-setup operation and is
+An executable in `runtime/scripts/` that implements one git-setup operation and is
 selected by the dispatcher, such as `config` or `verify`.
 _Avoid_: Helper, launcher
 

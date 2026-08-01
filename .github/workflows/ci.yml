@@ -82,7 +82,7 @@ jobs:
 
       - name: Lint shell scripts
         shell: bash
-        run: shellcheck git-setup helper/set_variable.sh lib/global_fn.sh scripts/* tests/*.sh
+        run: shellcheck git-setup runtime/helper/*.sh runtime/lib/*.sh runtime/scripts/* tests/*.sh
 
       - name: Run git-setup tests
         shell: bash

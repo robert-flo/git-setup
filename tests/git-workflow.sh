@@ -49,7 +49,7 @@ printf 'untracked\n' > "$REPOSITORY/untracked.txt"
 cmp "$TEST_ROOT/make-status" "$TEST_ROOT/direct-status" || fail 'direct status changed the Make status body'
 
 # shellcheck disable=SC2016 # Git must store these expansions for alias runtime.
-git -C "$REPOSITORY" config alias.s "$(git config --file "$ROOT_DIR/templates/git/gitconfig_aliases" --get alias.s)"
+git -C "$REPOSITORY" config alias.s "$(git config --file "$ROOT_DIR/runtime/templates/git/gitconfig_aliases" --get alias.s)"
 mkdir "$REPOSITORY/nested"
 (
   cd "$REPOSITORY/nested"
@@ -140,7 +140,7 @@ done
 # The generated Git shell aliases preserve output parity with their direct
 # surface. The native `git clean` exception is represented by `git bye`.
 for command in a c cm ac p l st s d lg af fuck bye df fc fm; do
-  git -C "$REPOSITORY" config "alias.$command" "$(git config --file "$ROOT_DIR/templates/git/gitconfig_aliases" --get "alias.$command")"
+  git -C "$REPOSITORY" config "alias.$command" "$(git config --file "$ROOT_DIR/runtime/templates/git/gitconfig_aliases" --get "alias.$command")"
   (
     cd "$REPOSITORY/nested"
     if [[ $command == cm || $command == fc || $command == fm || $command == fuck ]]; then

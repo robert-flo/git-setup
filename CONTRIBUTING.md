@@ -24,7 +24,7 @@ documentation, and test improvements are all welcome.
    ```bash
    pre-commit run --all-files
    bash tests/git-setup.sh
-   shellcheck git-setup helper/set_variable.sh lib/global_fn.sh scripts/* tests/*.sh
+   shellcheck git-setup runtime/helper/*.sh runtime/lib/*.sh runtime/scripts/* tests/*.sh
    ```
 
 4. Commit atomically using the

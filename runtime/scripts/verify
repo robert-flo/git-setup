@@ -8,7 +8,7 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
   source "$module_dir/../helper/set_variable.sh"
-  PROJECT_DIR="$GIT_SETUP_ROOT"
+  PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
 
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
   source "$PROJECT_DIR/lib/global_fn.sh"
