@@ -138,6 +138,11 @@ esa carpeta.
   de archivos.
 - El manifiesto debe tener una única fuente de verdad para el menú y, cuando
   sea viable, para generar ayuda y completion.
+- Para que Bash y Zsh compartan el mismo contrato sin que Zsh tenga que
+  `source`ar código Bash, esa fuente será un archivo plano y neutral al
+  lenguaje, `runtime/commands.tsv`, con un registro por comando. El loader de
+  Bash, el completion de Zsh, el menú, la ayuda y el dispatcher leerán ese
+  contrato; ningún loader de shell será la fuente exclusiva de la metadata.
 - La solución no debe hacer obligatorio `fzf` para el menú principal ni copiar
   el modelo de repositorio Git bare de otros proyectos de dotfiles.
 - La implementación debe preservar la compatibilidad de las invocaciones
