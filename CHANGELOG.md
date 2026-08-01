@@ -15,6 +15,8 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- docs: specify executable command modularization ([#34](https://github.com/robert-flo/git-setup/pull/34)). <!-- changelog-pr:34 -->
+
 - Separate shared runtime capabilities ([#45](https://github.com/robert-flo/git-setup/pull/45)). <!-- changelog-pr:45 -->
 
 - Centralize runtime paths and relocate the private payload ([#44](https://github.com/robert-flo/git-setup/pull/44)). <!-- changelog-pr:44 -->
