@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Introduce executable command dispatcher ([#42](https://github.com/robert-flo/git-setup/pull/42)). <!-- changelog-pr:42 -->
+
+
 ### Changed
 
 - fix: require repository context for workflow commands ([#32](https://github.com/robert-flo/git-setup/pull/32)). <!-- changelog-pr:32 -->
