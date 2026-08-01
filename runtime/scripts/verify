@@ -11,7 +11,11 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
 
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
-  source "$PROJECT_DIR/lib/global_fn.sh"
+  source "$PROJECT_DIR/lib/presentation.sh"
+  # shellcheck disable=SC1091 # Dependency capability used by verification.
+  source "$PROJECT_DIR/lib/dependencies.sh"
+  # shellcheck disable=SC1091 # Key lookup capability used by verification.
+  source "$PROJECT_DIR/lib/keys.sh"
   # shellcheck disable=SC1091 # Focused command interface helper.
   source "$PROJECT_DIR/lib/command_interface.sh"
 fi
@@ -24,25 +28,6 @@ show_verify_help() {
   Review Git, SSH, GPG, GitHub, and generated configuration files without
   changing them.
 HELP_EOF
-}
-
-get_gpg_key_id() {
-  local key_id=""
-
-  # Try by name
-  key_id=$(gpg --list-secret-keys --keyid-format SHORT "$USER_NAME" 2> /dev/null | grep "^sec" | head -1 | awk '{print $2}' | cut -d'/' -f2 || true)
-
-  # Try by email
-  if [[ -z $key_id ]]; then
-    key_id=$(gpg --list-secret-keys --keyid-format SHORT "$USER_EMAIL" 2> /dev/null | grep "^sec" | head -1 | awk '{print $2}' | cut -d'/' -f2 || true)
-  fi
-
-  # Try any RSA key
-  if [[ -z $key_id ]]; then
-    key_id=$(gpg --list-secret-keys --keyid-format SHORT 2> /dev/null | grep "^sec" | grep "rsa4096" | head -1 | awk '{print $2}' | cut -d'/' -f2 || true)
-  fi
-
-  echo "$key_id"
 }
 
 verify_git_config() {

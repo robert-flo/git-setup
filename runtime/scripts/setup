@@ -8,13 +8,13 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   source "$module_dir/../helper/set_variable.sh"
   PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
   # shellcheck disable=SC1091
-  source "$PROJECT_DIR/lib/global_fn.sh"
+  source "$PROJECT_DIR/lib/presentation.sh"
+  # shellcheck disable=SC1091 # Configuration capability used by setup.
+  source "$PROJECT_DIR/lib/configuration.sh"
+  # shellcheck disable=SC1091 # Key lookup capability used by setup.
+  source "$PROJECT_DIR/lib/keys.sh"
   # shellcheck disable=SC1091 # Focused command interface helper.
   source "$PROJECT_DIR/lib/command_interface.sh"
-  # shellcheck disable=SC1091
-  source "$PROJECT_DIR/scripts/config"
-  # shellcheck disable=SC1091
-  source "$PROJECT_DIR/scripts/verify"
 fi
 
 prompt_setup_identity() {
@@ -43,14 +43,9 @@ prompt_setup_identity() {
 # │ Detection Functions                                                          │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
-# shellcheck disable=SC1091 # Module is resolved from the project root.
-source "$PROJECT_DIR/scripts/verify"
 # ┌──────────────────────────────────────────────────────────────────────────────┐
 # │ Setup Functions                                                              │
 # └──────────────────────────────────────────────────────────────────────────────┘
-
-# shellcheck disable=SC1091 # Module is resolved from the project root.
-source "$PROJECT_DIR/scripts/config"
 
 show_setup_help() {
   print_section "Git Setup Usage"
