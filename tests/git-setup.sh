@@ -154,14 +154,14 @@ for command in config verify setup test clean; do
     HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
     TERM=dumb "$ROOT_DIR/runtime/scripts/$command" --help > "$TEST_ROOT/$command-help-output" 2>&1 || command_help_status=$?
   ((command_help_status == 0)) || fail "$command --help failed without dependencies"
-  require_output "$TEST_ROOT/$command-help-output" "Usage: git-setup $command [--help]"
+  require_output "$TEST_ROOT/$command-help-output" "Usage: git-setup $command [-h|--help]"
 
   command_help_status=0
   PATH="$NO_PACKAGE_MANAGER_BIN" \
     HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
     TERM=dumb "$ROOT_DIR/runtime/scripts/$command" -h > "$TEST_ROOT/$command-short-help-output" 2>&1 || command_help_status=$?
   ((command_help_status == 0)) || fail "$command -h failed without dependencies"
-  require_output "$TEST_ROOT/$command-short-help-output" "Usage: git-setup $command [--help]"
+  require_output "$TEST_ROOT/$command-short-help-output" "Usage: git-setup $command [-h|--help]"
 done
 PATH="$NO_PACKAGE_MANAGER_BIN" HOME="$TEST_ROOT/help-home" TERM=dumb \
   "$ROOT_DIR/runtime/scripts/help" --help > "$TEST_ROOT/help-module-output"
@@ -175,7 +175,7 @@ invalid_option_status=0
 run_setup "$INVALID_OPTION_HOME" config --invalid > "$TEST_ROOT/invalid-option-output" 2>&1 || invalid_option_status=$?
 ((invalid_option_status != 0)) || fail 'invalid command option unexpectedly succeeded'
 require_output "$TEST_ROOT/invalid-option-output" 'Unknown option for config: --invalid'
-require_output "$TEST_ROOT/invalid-option-output" 'Usage: git-setup config [--help]'
+require_output "$TEST_ROOT/invalid-option-output" 'Usage: git-setup config [-h|--help]'
 [[ ! -e $INVALID_OPTION_HOME/.config/git/config ]] || fail 'invalid command option changed configuration'
 
 generated_files=(

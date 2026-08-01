@@ -131,6 +131,22 @@ Run `git-setup` without arguments to return to the interactive menu. The
 integration test requires the Git name and email created by **Run full setup**;
 otherwise it explains the prerequisite and does not offer a GitHub push.
 
+## Shell Completion
+
+The completion definitions use the same command metadata as the menu and help:
+
+```shell
+# Bash
+source runtime/completion/git-setup.bash
+
+# Zsh
+fpath=(runtime/completion "$fpath[@]")
+autoload -Uz compinit && compinit
+```
+
+Zsh discovers `_git-setup` from `runtime/completion`; Bash registers the
+`git-setup` completion function when its file is sourced.
+
 ## Personal Git Customization
 
 Generated files are refreshed by `git-setup config` and `git-setup setup`.

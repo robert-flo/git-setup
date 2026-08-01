@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 
-# One declarative record per public command, shared by dispatch, menu, help,
-# and future completion. Fields: canonical|aliases|label|description|icon|menu.
+if [[ ${GIT_SETUP_COMMAND_CATALOG_LOADED:-0} == 1 ]]; then
+  return 0
+fi
+readonly GIT_SETUP_COMMAND_CATALOG_LOADED=1
+
+# Load the language-neutral command contract shared by dispatch, menu, help,
+# and shell completion. Fields: canonical<TAB>aliases<TAB>label<TAB>description<TAB>icon<TAB>menu<TAB>options.
+GIT_SETUP_COMMAND_CATALOG_DIR=""
+GIT_SETUP_COMMAND_CATALOG_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+readonly GIT_SETUP_COMMAND_CATALOG_DIR
+readonly GIT_SETUP_COMMAND_CATALOG_FILE="${GIT_SETUP_COMMAND_CATALOG_FILE:-$GIT_SETUP_COMMAND_CATALOG_DIR/../commands.tsv}"
 # shellcheck disable=SC2034 # Public catalog consumed by sourced capabilities.
-readonly -a GIT_SETUP_COMMAND_CATALOG=(
-  "config|f --config -f|Config|Create or refresh the managed Git configuration files.|${RAVN_ICON[ui_gear]}|0"
-  "verify|v --verify -v|Verify current configuration|Review Git, SSH, GPG, GitHub, and generated configuration files.|${RAVN_ICON[ui_check]}|1"
-  "setup|s --setup -s|Run full setup|Configure GitHub, SSH, GPG, and commit signing.|${RAVN_ICON[ui_gear]}|1"
-  "test|t --test -t|Run integration test|Create a test repository and verify a signed commit.|${RAVN_ICON[ui_test]}|1"
-  "clean|c --clean -c|Clean local config (fresh start)|Remove configuration created by git-setup after confirmation.|${RAVN_ICON[ui_trash]}|1"
-  "help|h --help -h|Help and usage|Show this guide.|󰋖|1"
-)
+GIT_SETUP_COMMAND_CATALOG=()
+while IFS= read -r catalog_record || [[ -n $catalog_record ]]; do
+  [[ -z $catalog_record || ${catalog_record:0:1} == "#" ]] && continue
+  GIT_SETUP_COMMAND_CATALOG+=("$catalog_record")
+done < "$GIT_SETUP_COMMAND_CATALOG_FILE"
+readonly GIT_SETUP_COMMAND_CATALOG
 
 command_catalog_get() {
   local lookup="$1"
@@ -22,10 +29,11 @@ command_catalog_get() {
   local description=""
   local icon=""
   local menu=""
+  local options=""
   local value=""
 
   for record in "${GIT_SETUP_COMMAND_CATALOG[@]}"; do
-    IFS='|' read -r canonical aliases label description icon menu <<< "$record"
+    IFS=$'\t' read -r canonical aliases label description icon menu options <<< "$record"
     if [[ $canonical == "$lookup" || " $aliases " == *" $lookup "* ]]; then
       case "$requested_field" in
         canonical) value="$canonical" ;;
@@ -34,6 +42,7 @@ command_catalog_get() {
         description) value="$description" ;;
         icon) value="$icon" ;;
         menu) value="$menu" ;;
+        options) value="$options" ;;
         module) value="$canonical" ;;
         *)
           GIT_SETUP_COMMAND_CATALOG_ERROR="Unknown metadata field: $requested_field"
@@ -46,6 +55,7 @@ command_catalog_get() {
     fi
   done
 
+  # shellcheck disable=SC2034 # Read by the caller in the same shell.
   GIT_SETUP_COMMAND_CATALOG_ERROR="Unknown command: $lookup"
   return 1
 }
@@ -59,11 +69,28 @@ command_catalog_list() {
   local description=""
   local icon=""
   local menu=""
+  local options=""
 
   for record in "${GIT_SETUP_COMMAND_CATALOG[@]}"; do
-    IFS='|' read -r canonical aliases label description icon menu <<< "$record"
+    IFS=$'\t' read -r canonical aliases label description icon menu options <<< "$record"
     if [[ $include_menu == all || $menu == 1 ]]; then
       printf '%s\n' "$canonical"
     fi
+  done
+}
+
+command_catalog_completion_words() {
+  local record=""
+  local canonical=""
+  local aliases=""
+  local label=""
+  local description=""
+  local icon=""
+  local menu=""
+  local options=""
+
+  for record in "${GIT_SETUP_COMMAND_CATALOG[@]}"; do
+    IFS=$'\t' read -r canonical aliases label description icon menu options <<< "$record"
+    printf '%s %s\n' "$canonical" "$aliases"
   done
 }

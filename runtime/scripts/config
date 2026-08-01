@@ -20,7 +20,7 @@ fi
 show_config_help() {
   print_section "Git Configuration Usage"
   cat << 'HELP_EOF'
-  Usage: git-setup config [--help]
+  Usage: git-setup config [-h|--help]
 
   Create or refresh the six generated Git configuration files and install the
   managed workflow commands. The optional gitconfig.local file is preserved.

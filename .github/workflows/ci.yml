@@ -82,11 +82,18 @@ jobs:
 
       - name: Lint shell scripts
         shell: bash
-        run: shellcheck git-setup runtime/helper/*.sh runtime/lib/*.sh runtime/scripts/* tests/*.sh
+        run: shellcheck git-setup runtime/helper/*.sh runtime/lib/*.sh runtime/scripts/* runtime/completion/*.bash tests/*.sh
 
       - name: Run git-setup tests
         shell: bash
         run: bash tests/git-setup.sh
+
+      - name: Install Zsh for completion tests
+        run: sudo apt-get update && sudo apt-get install --yes zsh
+
+      - name: Run completion tests
+        shell: bash
+        run: bash tests/completion.sh
 
       - name: Run managed workflow tests
         shell: bash

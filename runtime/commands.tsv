@@ -1,0 +1,7 @@
+# canonical	aliases	label	description	icon	menu	options
+config	f --config -f	Config	Create or refresh the managed Git configuration files.		0	-h --help
+verify	v --verify -v	Verify current configuration	Review Git, SSH, GPG, GitHub, and generated configuration files.		1	-h --help
+setup	s --setup -s	Run full setup	Configure GitHub, SSH, GPG, and commit signing.		1	-h --help
+test	t --test -t	Run integration test	Create a test repository and verify a signed commit.		1	-h --help
+clean	c --clean -c	Clean local config (fresh start)	Remove configuration created by git-setup after confirmation.		1	-h --help
+help	h --help -h	Help and usage	Show this guide.	󰋖	1	-h --help
