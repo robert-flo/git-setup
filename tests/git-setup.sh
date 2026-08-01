@@ -108,7 +108,7 @@ for package_manager in pacman dnf; do
 
   manager_status=0
   PATH="$manager_bin" TERM=dumb \
-    "$GIT_SETUP" help > "$TEST_ROOT/$package_manager-output" 2>&1 || manager_status=$?
+    "$GIT_SETUP" config > "$TEST_ROOT/$package_manager-output" 2>&1 || manager_status=$?
   ((manager_status != 0)) || fail "$package_manager guidance did not stop git-setup"
 
   case $package_manager in
@@ -121,13 +121,13 @@ done
 # command and still gives the user all three supported installation paths.
 NO_PACKAGE_MANAGER_BIN="$TEST_ROOT/no-package-manager-bin"
 mkdir -p "$NO_PACKAGE_MANAGER_BIN"
-for command in bash dirname realpath; do
+for command in bash cat dirname realpath; do
   ln -s "$(command -v "$command")" "$NO_PACKAGE_MANAGER_BIN/$command"
 done
 
 no_package_manager_status=0
 PATH="$NO_PACKAGE_MANAGER_BIN" TERM=dumb \
-  "$GIT_SETUP" help > "$TEST_ROOT/no-package-manager-output" 2>&1 || no_package_manager_status=$?
+  "$GIT_SETUP" config > "$TEST_ROOT/no-package-manager-output" 2>&1 || no_package_manager_status=$?
 
 ((no_package_manager_status != 0)) || fail 'missing dependencies without a package manager did not stop git-setup'
 require_output "$TEST_ROOT/no-package-manager-output" 'Missing commands: git gh gpg ssh-keygen delta'
@@ -136,6 +136,47 @@ require_output "$TEST_ROOT/no-package-manager-output" 'Install packages that pro
 require_output "$TEST_ROOT/no-package-manager-output" 'sudo pacman -S --needed git github-cli gnupg openssh git-delta'
 require_output "$TEST_ROOT/no-package-manager-output" 'sudo apt install git gh gnupg openssh-client git-delta'
 require_output "$TEST_ROOT/no-package-manager-output" 'sudo dnf install git gh gnupg2 openssh-clients git-delta'
+
+# Global help is intentionally available before operational dependency checks.
+global_help_status=0
+PATH="$NO_PACKAGE_MANAGER_BIN" TERM=dumb \
+  "$GIT_SETUP" --help > "$TEST_ROOT/global-help-output" 2>&1 || global_help_status=$?
+((global_help_status == 0)) || fail 'global help required operational dependencies'
+require_output "$TEST_ROOT/global-help-output" 'GITHUB TOKEN'
+if grep -Fq 'Missing commands:' "$TEST_ROOT/global-help-output"; then
+  fail 'global help ran dependency validation'
+fi
+
+# Every autonomous command exposes help without performing its operation.
+for command in config verify setup test clean; do
+  command_help_status=0
+  PATH="$NO_PACKAGE_MANAGER_BIN" \
+    HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
+    TERM=dumb "$ROOT_DIR/scripts/$command" --help > "$TEST_ROOT/$command-help-output" 2>&1 || command_help_status=$?
+  ((command_help_status == 0)) || fail "$command --help failed without dependencies"
+  require_output "$TEST_ROOT/$command-help-output" "Usage: git-setup $command [--help]"
+
+  command_help_status=0
+  PATH="$NO_PACKAGE_MANAGER_BIN" \
+    HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
+    TERM=dumb "$ROOT_DIR/scripts/$command" -h > "$TEST_ROOT/$command-short-help-output" 2>&1 || command_help_status=$?
+  ((command_help_status == 0)) || fail "$command -h failed without dependencies"
+  require_output "$TEST_ROOT/$command-short-help-output" "Usage: git-setup $command [--help]"
+done
+PATH="$NO_PACKAGE_MANAGER_BIN" HOME="$TEST_ROOT/help-home" TERM=dumb \
+  "$ROOT_DIR/scripts/help" --help > "$TEST_ROOT/help-module-output"
+require_output "$TEST_ROOT/help-module-output" 'GITHUB TOKEN'
+
+# Arguments after a command reach that module and invalid options fail before
+# any command-specific operation mutates the user's configuration.
+INVALID_OPTION_HOME="$TEST_ROOT/invalid-option-home"
+mkdir -p "$INVALID_OPTION_HOME"
+invalid_option_status=0
+run_setup "$INVALID_OPTION_HOME" config --invalid > "$TEST_ROOT/invalid-option-output" 2>&1 || invalid_option_status=$?
+((invalid_option_status != 0)) || fail 'invalid command option unexpectedly succeeded'
+require_output "$TEST_ROOT/invalid-option-output" 'Unknown option for config: --invalid'
+require_output "$TEST_ROOT/invalid-option-output" 'Usage: git-setup config [--help]'
+[[ ! -e $INVALID_OPTION_HOME/.config/git/config ]] || fail 'invalid command option changed configuration'
 
 generated_files=(
   config

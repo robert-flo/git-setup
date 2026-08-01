@@ -11,7 +11,19 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
 
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
   source "$PROJECT_DIR/lib/global_fn.sh"
+  # shellcheck disable=SC1091 # Focused command interface helper.
+  source "$PROJECT_DIR/lib/command_interface.sh"
 fi
+
+show_config_help() {
+  print_section "Git Configuration Usage"
+  cat << 'HELP_EOF'
+  Usage: git-setup config [--help]
+
+  Create or refresh the six generated Git configuration files and install the
+  managed workflow commands. The optional gitconfig.local file is preserved.
+HELP_EOF
+}
 
 generate_git_config_files() {
   print_section "${RAVN_ICON[ui_gear]} Git Configuration Files"
@@ -125,5 +137,5 @@ install_managed_workflow_commands() {
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
-  generate_git_config_files
+  run_command_entrypoint config show_config_help generate_git_config_files "$@"
 fi

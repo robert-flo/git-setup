@@ -76,6 +76,13 @@ BANNER_EOF
   echo -e "${NC}"
 }
 
+is_help_command() {
+  case "${1:-}" in
+    help | h | --help | -h) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 show_menu() {
   echo ""
   print_section "${RAVN_ICON[ui_command]} Choose an action"
@@ -120,6 +127,11 @@ run_interactive_menu() {
 }
 
 main() {
+  if (($# > 0)) && is_help_command "$1"; then
+    dispatch_command "$@" || return $?
+    return 0
+  fi
+
   # docker-run prints its isolation notice immediately before launching us.
   # Preserve that context on the first screen inside a container; subsequent
   # menu navigation can still use clear_screen normally.

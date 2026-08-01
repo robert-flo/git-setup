@@ -12,7 +12,19 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
 
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
   source "$PROJECT_DIR/lib/global_fn.sh"
+  # shellcheck disable=SC1091 # Focused command interface helper.
+  source "$PROJECT_DIR/lib/command_interface.sh"
 fi
+
+show_verify_help() {
+  print_section "Git Verification Usage"
+  cat << 'HELP_EOF'
+  Usage: git-setup verify [--help]
+
+  Review Git, SSH, GPG, GitHub, and generated configuration files without
+  changing them.
+HELP_EOF
+}
 
 get_gpg_key_id() {
   local key_id=""
@@ -429,5 +441,5 @@ do_verify() {
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
-  do_verify
+  run_command_entrypoint verify show_verify_help do_verify "$@"
 fi
