@@ -7,7 +7,7 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   # shellcheck disable=SC1091 # Resolved from the project root.
   source "$module_dir/../helper/set_variable.sh"
-  PROJECT_DIR="$GIT_SETUP_ROOT"
+  PROJECT_DIR="$GIT_SETUP_RUNTIME_DIR"
 
   # shellcheck disable=SC1091 # Resolved from the checked-out project root.
   source "$PROJECT_DIR/lib/global_fn.sh"
@@ -110,7 +110,8 @@ generate_git_config_files() {
 }
 
 install_managed_workflow_commands() {
-  local workflow_source_dir="$PROJECT_DIR/make/workflow"
+  # shellcheck disable=SC2153 # Value is provided by helper/set_variable.sh.
+  local workflow_source_dir="$WORKFLOW_SOURCE_DIR"
   local -a workflow_files=(.git-workflow a c cm ac p l st s d lg af fuck bye clean df fc fm)
   local workflow_file=""
   local action=""

@@ -11,6 +11,6 @@ RUN apt-get update \
 
 WORKDIR /opt/git-setup
 COPY . /opt/git-setup
-RUN chmod +x git-setup scripts/*
+RUN chmod +x git-setup runtime/scripts/*
 
 ENTRYPOINT ["/opt/git-setup/git-setup"]

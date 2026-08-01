@@ -152,19 +152,19 @@ for command in config verify setup test clean; do
   command_help_status=0
   PATH="$NO_PACKAGE_MANAGER_BIN" \
     HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
-    TERM=dumb "$ROOT_DIR/scripts/$command" --help > "$TEST_ROOT/$command-help-output" 2>&1 || command_help_status=$?
+    TERM=dumb "$ROOT_DIR/runtime/scripts/$command" --help > "$TEST_ROOT/$command-help-output" 2>&1 || command_help_status=$?
   ((command_help_status == 0)) || fail "$command --help failed without dependencies"
   require_output "$TEST_ROOT/$command-help-output" "Usage: git-setup $command [--help]"
 
   command_help_status=0
   PATH="$NO_PACKAGE_MANAGER_BIN" \
     HOME="$TEST_ROOT/help-home" XDG_CONFIG_HOME="$TEST_ROOT/help-home/.config" \
-    TERM=dumb "$ROOT_DIR/scripts/$command" -h > "$TEST_ROOT/$command-short-help-output" 2>&1 || command_help_status=$?
+    TERM=dumb "$ROOT_DIR/runtime/scripts/$command" -h > "$TEST_ROOT/$command-short-help-output" 2>&1 || command_help_status=$?
   ((command_help_status == 0)) || fail "$command -h failed without dependencies"
   require_output "$TEST_ROOT/$command-short-help-output" "Usage: git-setup $command [--help]"
 done
 PATH="$NO_PACKAGE_MANAGER_BIN" HOME="$TEST_ROOT/help-home" TERM=dumb \
-  "$ROOT_DIR/scripts/help" --help > "$TEST_ROOT/help-module-output"
+  "$ROOT_DIR/runtime/scripts/help" --help > "$TEST_ROOT/help-module-output"
 require_output "$TEST_ROOT/help-module-output" 'GITHUB TOKEN'
 
 # Arguments after a command reach that module and invalid options fail before
@@ -333,7 +333,7 @@ mkdir -p "$DIRECT_MODULE_HOME"
 NAME='Direct Module User' EMAIL='direct-module@example.test' \
   HOME="$DIRECT_MODULE_HOME" XDG_CONFIG_HOME="$DIRECT_MODULE_HOME/.config" \
   TERM=dumb PATH="$TEST_BIN:$PATH" \
-  "$ROOT_DIR/scripts/config" > "$TEST_ROOT/direct-module-output"
+  "$ROOT_DIR/runtime/scripts/config" > "$TEST_ROOT/direct-module-output"
 require_file "$DIRECT_MODULE_HOME/.config/git/config"
 require_output "$TEST_ROOT/direct-module-output" 'Git Configuration Files'
 
